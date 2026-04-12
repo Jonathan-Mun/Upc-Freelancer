@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FreelanceUPC — Header Template</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ============================================================
+       DEMO TOGGLE — À RETIRER EN PRODUCTION
+  ============================================================ -->
+  <div class="demo-bar">
+    <span class="demo-label">Mode d'affichage :</span>
+    <button class="demo-btn active" id="btn-visitor" onclick="showHeader('visitor')">
+      <span class="dot dot-off"></span> Visiteur
+    </button>
+    <button class="demo-btn" id="btn-auth" onclick="showHeader('auth')">
+      <span class="dot dot-on"></span> Connecté
+    </button>
+  </div>
+
+  <!-- ============================================================
+       HEADER 1 — VISITEUR (non connecté)
+  ============================================================ -->
+  <header class="site-header visitor-header" id="header-visitor">
+    <div class="header-inner">
+
+      <!-- Logo -->
+      <a href="#" class="logo" aria-label="FreelanceUPC accueil">
+        <div class="logo-mark">
+          <span class="lm-r">F</span><span class="lm-b">U</span>
+        </div>
+        <div class="logo-text">
+          <span class="logo-name">Freelance<em>UPC</em></span>
+          <span class="logo-tag">Étudiants · Talents · Projets</span>
+        </div>
+      </a>
+
+      <!-- Nav principale -->
+      <nav class="main-nav" aria-label="Navigation principale">
+        <div class="nav-item has-dropdown">
+          <button class="nav-link" aria-haspopup="true" aria-expanded="false">
+            Trouver un talent
+            <svg class="chevron" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="dropdown mega-dropdown">
+            <div class="dropdown-section">
+              <p class="dropdown-heading">Par compétence</p>
+              <a href="#" class="dropdown-item">Développement Web</a>
+              <a href="#" class="dropdown-item">Design graphique</a>
+              <a href="#" class="dropdown-item">Marketing digital</a>
+              <a href="#" class="dropdown-item">Rédaction & Contenu</a>
+            </div>
+            <div class="dropdown-section">
+              <p class="dropdown-heading">Par catégorie</p>
+              <a href="#" class="dropdown-item">Applications mobiles</a>
+              <a href="#" class="dropdown-item">Intelligence artificielle</a>
+              <a href="#" class="dropdown-item">Base de données</a>
+              <a href="#" class="dropdown-item">Cybersécurité</a>
+            </div>
+            <div class="dropdown-section dropdown-featured">
+              <p class="dropdown-heading">Populaires</p>
+              <a href="#" class="dropdown-item chip">Développeurs web</a>
+              <a href="#" class="dropdown-item chip">Designers UI</a>
+              <a href="#" class="dropdown-item chip">Data analysts</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="nav-item has-dropdown">
+          <button class="nav-link" aria-haspopup="true" aria-expanded="false">
+            Trouver du travail
+            <svg class="chevron" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="dropdown">
+            <div class="dropdown-section">
+              <a href="#" class="dropdown-item">Voir tous les projets</a>
+              <a href="#" class="dropdown-item">Projets récents</a>
+              <a href="#" class="dropdown-item">Projets urgents</a>
+              <a href="#" class="dropdown-item">Concours & Défis</a>
+            </div>
+          </div>
+        </div>
+
+        <a href="#" class="nav-link simple">Comment ça marche</a>
+      </nav>
+
+      <!-- Actions visiteur -->
+      <div class="header-actions">
+        <a href="#" class="btn-ghost">Se connecter</a>
+        <a href="#" class="btn-outline">S'inscrire</a>
+        <a href="#" class="btn-primary">
+          <svg viewBox="0 0 16 16" fill="none" width="14" height="14">
+            <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Publier un projet
+        </a>
+      </div>
+
+      <!-- Burger mobile -->
+      <button class="burger" id="burger-visitor" aria-label="Menu mobile" onclick="toggleMobileMenu('visitor')">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+    <!-- Mobile menu visiteur -->
+    <div class="mobile-menu" id="mobile-visitor">
+      <nav class="mobile-nav">
+        <a href="#" class="mobile-nav-link">Trouver un talent</a>
+        <a href="#" class="mobile-nav-link">Trouver du travail</a>
+        <a href="#" class="mobile-nav-link">Comment ça marche</a>
+      </nav>
+      <div class="mobile-actions">
+        <a href="#" class="btn-ghost full">Se connecter</a>
+        <a href="#" class="btn-outline full">S'inscrire</a>
+        <a href="#" class="btn-primary full">Publier un projet</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       HEADER 2 — AUTHENTIFIÉ (connecté)
+  ============================================================ -->
+  <header class="site-header auth-header hidden" id="header-auth">
+    <div class="header-inner">
+
+      <!-- Logo -->
+      <a href="#" class="logo" aria-label="FreelanceUPC tableau de bord">
+        <div class="logo-mark">
+          <span class="lm-r">F</span><span class="lm-b">U</span>
+        </div>
+        <div class="logo-text">
+          <span class="logo-name">Freelance<em>UPC</em></span>
+        </div>
+      </a>
+
+      <!-- Search bar -->
+      <div class="search-bar" id="searchBar">
+        <svg class="search-icon" viewBox="0 0 20 20" fill="none">
+          <circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M13 13l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <input
+          type="text"
+          class="search-input"
+          placeholder="Rechercher un freelance, un projet…"
+          aria-label="Rechercher"
+          id="searchInput"
+          autocomplete="off"
+        />
+        <div class="search-dropdown" id="searchDropdown">
+          <div class="search-section">
+            <p class="search-section-label">Rechercher dans</p>
+            <a href="#" class="search-suggestion">
+              <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+              Projets disponibles
+            </a>
+            <a href="#" class="search-suggestion">
+              <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Freelances étudiants
+            </a>
+            <a href="#" class="search-suggestion">
+              <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M8 2l1.8 3.6L14 6.4l-3 2.9.7 4.1L8 11.4l-3.7 2 .7-4.1L2 6.4l4.2-.8L8 2z" stroke="currentColor" stroke-width="1.3"/></svg>
+              Compétences populaires
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Nav dashboard -->
+      <nav class="dash-nav" aria-label="Navigation dashboard">
+        <div class="nav-item has-dropdown">
+          <button class="nav-link" aria-haspopup="true" aria-expanded="false">
+            Parcourir
+            <svg class="chevron" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="dropdown">
+            <div class="dropdown-section">
+              <a href="#" class="dropdown-item">Tous les projets</a>
+              <a href="#" class="dropdown-item">Freelances vérifiés</a>
+              <a href="#" class="dropdown-item">Catégories</a>
+            </div>
+          </div>
+        </div>
+        <div class="nav-item has-dropdown">
+          <button class="nav-link" aria-haspopup="true" aria-expanded="false">
+            Gérer
+            <svg class="chevron" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+          <div class="dropdown">
+            <div class="dropdown-section">
+              <a href="#" class="dropdown-item">Mes projets</a>
+              <a href="#" class="dropdown-item">Mes candidatures</a>
+              <a href="#" class="dropdown-item">Travaux en cours</a>
+              <a href="#" class="dropdown-item">Historique</a>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Icônes d'action authentifié -->
+      <div class="auth-actions">
+
+        <!-- Notifications -->
+        <div class="icon-btn-wrap has-dropdown">
+          <button class="icon-btn" aria-label="Notifications" id="notif-btn">
+            <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+              <path d="M10 2a6 6 0 00-6 6v3l-1.5 2.5A1 1 0 003.5 15h13a1 1 0 00.9-1.5L16 11V8a6 6 0 00-6-6z" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M8 16a2 2 0 004 0" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+            <span class="badge">4</span>
+          </button>
+          <div class="dropdown notif-dropdown">
+            <div class="dropdown-header-row">
+              <span class="dropdown-title">Notifications</span>
+              <a href="#" class="dropdown-link-sm">Tout voir</a>
+            </div>
+            <div class="notif-list">
+              <a href="#" class="notif-item unread">
+                <div class="notif-dot"></div>
+                <div class="notif-body">
+                  <p class="notif-text">Nouvelle candidature sur <strong>Développeur React</strong></p>
+                  <span class="notif-time">Il y a 5 min</span>
+                </div>
+              </a>
+              <a href="#" class="notif-item unread">
+                <div class="notif-dot"></div>
+                <div class="notif-body">
+                  <p class="notif-text"><strong>Karim M.</strong> a accepté votre mission</p>
+                  <span class="notif-time">Il y a 23 min</span>
+                </div>
+              </a>
+              <a href="#" class="notif-item">
+                <div class="notif-dot invis"></div>
+                <div class="notif-body">
+                  <p class="notif-text">Votre projet <strong>App UPC</strong> expire dans 2 jours</p>
+                  <span class="notif-time">Hier</span>
+                </div>
+              </a>
+              <a href="#" class="notif-item">
+                <div class="notif-dot invis"></div>
+                <div class="notif-body">
+                  <p class="notif-text">Évaluation reçue ⭐⭐⭐⭐⭐ de <strong>Amara D.</strong></p>
+                  <span class="notif-time">Il y a 2 jours</span>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="icon-btn-wrap has-dropdown">
+          <button class="icon-btn" aria-label="Messages">
+            <svg viewBox="0 0 20 20" fill="none" width="18" height="18">
+              <path d="M17 3H3a1 1 0 00-1 1v9a1 1 0 001 1h2v3l4-3h8a1 1 0 001-1V4a1 1 0 00-1-1z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+            </svg>
+            <span class="badge badge-msg">2</span>
+          </button>
+          <div class="dropdown msg-dropdown">
+            <div class="dropdown-header-row">
+              <span class="dropdown-title">Messages</span>
+              <a href="#" class="dropdown-link-sm">Tout voir</a>
+            </div>
+            <div class="msg-list">
+              <a href="#" class="msg-item">
+                <div class="msg-avatar" style="background: var(--accent-teal)">KM</div>
+                <div class="msg-body">
+                  <div class="msg-meta">
+                    <span class="msg-name">Karim Muamba</span>
+                    <span class="msg-time">14:32</span>
+                  </div>
+                  <p class="msg-preview">Bonjour, j'ai vu votre projet et…</p>
+                </div>
+                <span class="msg-unread-dot"></span>
+              </a>
+              <a href="#" class="msg-item">
+                <div class="msg-avatar" style="background: var(--accent-violet)">AD</div>
+                <div class="msg-body">
+                  <div class="msg-meta">
+                    <span class="msg-name">Amara Diallo</span>
+                    <span class="msg-time">11:05</span>
+                  </div>
+                  <p class="msg-preview">Le livrable est prêt pour révision…</p>
+                </div>
+                <span class="msg-unread-dot"></span>
+              </a>
+              <a href="#" class="msg-item read">
+                <div class="msg-avatar" style="background: #3a5a8a">JN</div>
+                <div class="msg-body">
+                  <div class="msg-meta">
+                    <span class="msg-name">Jean Nkosi</span>
+                    <span class="msg-time">Hier</span>
+                  </div>
+                  <p class="msg-preview">Merci pour votre retour rapide !</p>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        <!-- Publier -->
+        <a href="#" class="btn-primary compact">
+          <svg viewBox="0 0 16 16" fill="none" width="13" height="13">
+            <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          Publier
+        </a>
+
+        <!-- Avatar / profil dropdown -->
+        <div class="avatar-wrap has-dropdown">
+          <button class="avatar-btn" aria-label="Mon profil" aria-haspopup="true" aria-expanded="false">
+            <div class="avatar-circle">JM</div>
+            <div class="avatar-status"></div>
+          </button>
+          <div class="dropdown profile-dropdown">
+            <!-- Profil résumé -->
+            <div class="profile-header">
+              <div class="profile-avatar-lg">JM</div>
+              <div class="profile-info">
+                <span class="profile-name">Jonathan Mwamba</span>
+                <span class="profile-handle">@jonathanm070</span>
+                <div class="profile-stars">
+                  <span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star filled">★</span><span class="star">★</span>
+                  <span class="star-score">4.0</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Solde -->
+            <div class="balance-row">
+              <div class="balance-item">
+                <span class="balance-label">Solde</span>
+                <span class="balance-value">0,00 <em>USD</em></span>
+              </div>
+              <div class="balance-sep"></div>
+              <div class="balance-item">
+                <span class="balance-label">Missions</span>
+                <span class="balance-value">3 <em>actives</em></span>
+              </div>
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <a href="#" class="dropdown-item icon-item">
+              <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Mon profil
+            </a>
+            <a href="#" class="dropdown-item icon-item">
+              <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><rect x="2" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="2" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="9" y="9" width="5" height="5" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>
+              Tableau de bord
+            </a>
+            <a href="#" class="dropdown-item icon-item">
+              <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Mes projets
+            </a>
+            <a href="#" class="dropdown-item icon-item">
+              <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><circle cx="8" cy="8" r="2.5" stroke="currentColor" stroke-width="1.3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+              Paramètres
+            </a>
+
+            <div class="dropdown-divider"></div>
+
+            <!-- Thème toggle -->
+            <div class="theme-row">
+              <span class="theme-label">Thème</span>
+              <div class="theme-toggle" id="themeToggle" onclick="toggleTheme()">
+                <button class="theme-opt active" data-theme="dark">
+                  <svg viewBox="0 0 14 14" fill="none" width="12" height="12"><path d="M7 1a6 6 0 100 12A6 6 0 007 1z" fill="currentColor"/></svg>
+                </button>
+                <button class="theme-opt" data-theme="light">
+                  <svg viewBox="0 0 14 14" fill="none" width="12" height="12"><circle cx="7" cy="7" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="dropdown-divider"></div>
+
+            <a href="#" class="dropdown-item icon-item logout-item">
+              <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3M11 11l3-3-3-3M14 8H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Se déconnecter
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Burger mobile auth -->
+      <button class="burger" id="burger-auth" aria-label="Menu mobile" onclick="toggleMobileMenu('auth')">
+        <span></span><span></span><span></span>
+      </button>
+
+    </div>
+
+    <!-- Mobile menu auth -->
+    <div class="mobile-menu" id="mobile-auth">
+      <nav class="mobile-nav">
+        <a href="#" class="mobile-nav-link">Parcourir les projets</a>
+        <a href="#" class="mobile-nav-link">Gérer mes missions</a>
+        <a href="#" class="mobile-nav-link">Messages <span class="mobile-badge">2</span></a>
+        <a href="#" class="mobile-nav-link">Notifications <span class="mobile-badge">4</span></a>
+        <a href="#" class="mobile-nav-link">Mon profil</a>
+        <a href="#" class="mobile-nav-link">Paramètres</a>
+      </nav>
+      <div class="mobile-actions">
+        <a href="#" class="btn-primary full">Publier un projet</a>
+        <a href="#" class="btn-ghost full logout-mobile">Se déconnecter</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       DEMO CONTENT (spacer)
+  ============================================================ -->
+  <main class="demo-content">
+    <div class="demo-hero">
+      <div class="demo-hero-eyebrow">Plateforme freelance étudiante</div>
+      <h1 class="demo-hero-title">
+        Connectez vos talents<br/>
+        <span class="gradient-text">aux bonnes opportunités</span>
+      </h1>
+      <p class="demo-hero-sub">
+        FreelanceUPC met en relation les étudiants de l'UPC avec des clients à la recherche de compétences fraîches et vérifiées.
+      </p>
+      <div class="demo-hero-ctas">
+        <a href="#" class="btn-primary lg">Trouver un freelance</a>
+        <a href="#" class="btn-outline lg">Proposer mes services</a>
+      </div>
+      <div class="demo-stats">
+        <div class="stat-item"><span class="stat-num">340+</span><span class="stat-label">Étudiants vérifiés</span></div>
+        <div class="stat-sep"></div>
+        <div class="stat-item"><span class="stat-num">120+</span><span class="stat-label">Projets actifs</span></div>
+        <div class="stat-sep"></div>
+        <div class="stat-item"><span class="stat-num">95%</span><span class="stat-label">Taux de satisfaction</span></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
