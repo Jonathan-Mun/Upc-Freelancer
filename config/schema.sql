@@ -21,6 +21,37 @@ CREATE TABLE notifications(
 );
 
 -- ============================================================
+-- Table des clients
+-- ============================================================
+
+CREATE TABLE clients(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    
+    -- Localisation
+    ville VARCHAR(255),
+    pays VARCHAR(100),
+    
+    -- Vérification (inspiré de l'image)
+    email_verified BOOLEAN DEFAULT FALSE,
+    phone_verified BOOLEAN DEFAULT FALSE,
+    identity_verified BOOLEAN DEFAULT FALSE,
+    profile_completed BOOLEAN DEFAULT FALSE,
+    
+    -- Contact
+    telephone VARCHAR(20),
+    
+    -- Activité
+    nb_projets_publies INT DEFAULT 0,
+    nb_contrats_termines INT DEFAULT 0,
+    note_moyenne DECIMAL(3,2) DEFAULT 0.00,
+    
+    -- Compte
+    status_account ENUM('active', 'inactive') DEFAULT 'inactive' NOT NULL,
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+-- ============================================================
 -- Table des freelancers
 -- ============================================================
 
@@ -60,7 +91,6 @@ CREATE TABLE freelancer_competances(
 CREATE TABLE evaluations(
     id INT AUTO_INCREMENT PRIMARY KEY,
     freelancer_id INT NOT NULL,
-    client_id INT NOT NULL,
     rating DECIMAL(3, 2) NOT NULL,
     comment TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
