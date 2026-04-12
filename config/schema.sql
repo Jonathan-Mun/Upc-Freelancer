@@ -59,6 +59,7 @@ CREATE TABLE freelancers(
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     bio TEXT,
+    telephone VARCHAR(20),
     experience TEXT,
     note_moyenne DECIMAL(3, 2),
     nb_travaux INT DEFAULT 0,
@@ -86,16 +87,14 @@ CREATE TABLE freelancer_competances(
     FOREIGN KEY (competance_id) REFERENCES competances(id) ON DELETE CASCADE
 );
 
-
-
-CREATE TABLE evaluations(
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    freelancer_id INT NOT NULL,
-    rating DECIMAL(3, 2) NOT NULL,
-    comment TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (freelancer_id) REFERENCES freelancers(id) ON DELETE CASCADE,
-    FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE
+CREATE TABLE freelancer_verify(
+    freelancer_id INT PRIMARY KEY,
+    carte_recto VARCHAR(255),
+    carte_verso VARCHAR(255),
+    status ENUM('pending', 'verified', 'rejected') DEFAULT 'pending',
+    verified_at TIMESTAMP NULL DEFAULT NULL,
+    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (freelancer_id) REFERENCES freelancers(id) ON DELETE CASCADE
 );
 
 -- ============================================================
@@ -109,6 +108,7 @@ CREATE TABLE projects(
     description TEXT NOT NULL,
     budget DECIMAL(10, 2) NOT NULL,
     date_deadline DATE NOT NULL,
+    status ENUM('open', 'in_progress', 'completed', 'cancelled') DEFAULT 'open',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL 30 DAY),
     FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE
@@ -133,7 +133,7 @@ CREATE TABLE contracts(
     client_id INT NOT NULL,
     status ENUM('active', 'completed', 'cancelled') DEFAULT 'active' NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    finished_at TIMESTAMP DEFAULT (CURRENT_TIMESTAMP + INTERVAL 30 DAY),
+    finished_at TIMESTAMP DEFAULT NULL,
     FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE,
     FOREIGN KEY (freelancer_id) REFERENCES freelancers(id) ON DELETE CASCADE,
     FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE
@@ -148,4 +148,20 @@ CREATE TABLE messages(
     sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE TABLE evaluations(
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    freelancer_id INT NOT NULL,
+    client_id INT NOT NULL,
+    rating DECIMAL(3, 2) NOT NULL,
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    contract_id INT NOT NULL,
+
+    UNIQUE(contract_id),
+
+    FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE,
+    FOREIGN KEY (freelancer_id) REFERENCES freelancers(id) ON DELETE CASCADE,
+    FOREIGN KEY (client_id) REFERENCES users(id) ON DELETE CASCADE
 );
