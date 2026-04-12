@@ -1,0 +1,183 @@
+
+<style>
+#erd { padding: 8px 0; }
+#erd svg { width: 100% !important; max-width: 100%; }
+</style>
+<h2 class="sr-only">MCD complet de la base de données upc_freelancer avec 13 tables et leurs relations</h2>
+<div id="erd"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '12px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+    primaryColor: dark ? '#1e2d1a' : '#EAF3DE',
+    primaryBorderColor: dark ? '#3B6D11' : '#3B6D11',
+    primaryTextColor: dark ? '#c2c0b6' : '#173404',
+    secondaryColor: dark ? '#1a2230' : '#E6F1FB',
+    tertiaryColor: dark ? '#2a1f30' : '#EEEDFE',
+  },
+});
+
+const diagram = `erDiagram
+  USERS {
+    int id PK
+    varchar username
+    varchar email
+    varchar password
+    varchar photo
+    enum role
+    timestamp created_at
+  }
+  NOTIFICATIONS {
+    int id PK
+    int user_id FK
+    text message
+    boolean is_read
+    timestamp created_at
+  }
+  CLIENTS {
+    int id PK
+    int user_id FK
+    varchar ville
+    varchar pays
+    varchar telephone
+    boolean email_verified
+    boolean phone_verified
+    boolean identity_verified
+    boolean profile_completed
+    int nb_projets_publies
+    int nb_contrats_termines
+    decimal note_moyenne
+    enum status_account
+  }
+  FREELANCERS {
+    int id PK
+    int user_id FK
+    text bio
+    varchar telephone
+    text experience
+    decimal note_moyenne
+    int nb_travaux
+    enum status_account
+  }
+  CATEGORIES {
+    int id PK
+    varchar name
+  }
+  COMPETENCES {
+    int id PK
+    varchar name
+    int category FK
+  }
+  FREELANCER_COMPETENCES {
+    int id PK
+    int freelancer_id FK
+    int competence_id FK
+  }
+  FREELANCER_VERIFY {
+    int freelancer_id PK
+    varchar carte_recto
+    varchar carte_verso
+    enum status
+    timestamp verified_at
+    timestamp submitted_at
+  }
+  PROJECTS {
+    int id PK
+    int client_id FK
+    varchar title
+    text description
+    decimal budget
+    date date_deadline
+    enum status
+    timestamp created_at
+    timestamp expires_at
+  }
+  POSTULATIONS {
+    int id PK
+    int project_id FK
+    int freelancer_id FK
+    text cover_letter
+    decimal proposed_budget
+    enum status
+    timestamp created_at
+  }
+  CONTRACTS {
+    int id PK
+    int project_id FK
+    int freelancer_id FK
+    int client_id FK
+    enum status
+    timestamp created_at
+    timestamp finished_at
+  }
+  EVALUATIONS {
+    int id PK
+    int freelancer_id FK
+    int client_id FK
+    int contract_id FK
+    decimal rating
+    text comment
+    timestamp created_at
+  }
+  MESSAGES {
+    int id PK
+    int sender_id FK
+    int receiver_id FK
+    text content
+    boolean read
+    timestamp sent_at
+  }
+
+  USERS ||--o{ NOTIFICATIONS : "recoit"
+  USERS ||--o| CLIENTS : "est"
+  USERS ||--o| FREELANCERS : "est"
+  CLIENTS ||--o{ PROJECTS : "publie"
+  FREELANCERS ||--o| FREELANCER_VERIFY : "soumet"
+  FREELANCERS ||--o{ FREELANCER_COMPETENCES : "possede"
+  COMPETENCES ||--o{ FREELANCER_COMPETENCES : "incluse dans"
+  CATEGORIES ||--o{ COMPETENCES : "contient"
+  PROJECTS ||--o{ POSTULATIONS : "recoit"
+  FREELANCERS ||--o{ POSTULATIONS : "soumet"
+  POSTULATIONS ||--o| CONTRACTS : "devient"
+  PROJECTS ||--o| CONTRACTS : "genere"
+  CONTRACTS ||--o{ EVALUATIONS : "recoit"
+  USERS ||--o{ MESSAGES : "envoie"
+`;
+
+const { svg } = await mermaid.render('erd-main', diagram);
+document.getElementById('erd').innerHTML = svg;
+
+document.querySelectorAll('#erd svg .node').forEach(node => {
+  const firstPath = node.querySelector('path[d]');
+  if (!firstPath) return;
+  const d = firstPath.getAttribute('d');
+  const nums = d.match(/-?[\d.]+/g)?.map(Number);
+  if (!nums || nums.length < 8) return;
+  const xs = [nums[0], nums[2], nums[4], nums[6]];
+  const ys = [nums[1], nums[3], nums[5], nums[7]];
+  const x = Math.min(...xs), y = Math.min(...ys);
+  const w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+  const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+  rect.setAttribute('x', x); rect.setAttribute('y', y);
+  rect.setAttribute('width', w); rect.setAttribute('height', h);
+  rect.setAttribute('rx', '8');
+  for (const a of ['fill', 'stroke', 'stroke-width', 'class', 'style']) {
+    if (firstPath.hasAttribute(a)) rect.setAttribute(a, firstPath.getAttribute(a));
+  }
+  firstPath.replaceWith(rect);
+});
+
+document.querySelectorAll('#erd svg .row-rect-odd path, #erd svg .row-rect-even path').forEach(p => {
+  p.setAttribute('stroke', 'none');
+});
+</script>
