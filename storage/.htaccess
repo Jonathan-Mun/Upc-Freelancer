@@ -1,6 +1,6 @@
 # ============================================================
 # UPC FREELANCE — Protection répertoire storage
-# /var/www/html/upc_freelance/storage/.htaccess
+# /var/www/html/Upc-freelancer/storage/.htaccess
 # ============================================================
 
 # Interdire l'exécution de scripts PHP

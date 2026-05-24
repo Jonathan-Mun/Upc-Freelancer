@@ -4,13 +4,13 @@
 // /var/www/html/upc_freelance/public/index.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../includes/middleware.php';
+require_once '../includes/auth.php';
+require_once '../includes/functions.php';
+require_once '../includes/db.php';
 
 if (isLoggedIn()) {
-    redirect('/var/www/html/upc_freelance/app/dashboard.php');
+    redirect('app/dashboard.php');
 }
 
 $pageTitle = 'UPC Freelance — La plateforme freelance étudiante';
@@ -33,7 +33,7 @@ $stats = [
 
 $categories = $pdo->query('SELECT * FROM categories WHERE is_active = 1 ORDER BY name')->fetchAll();
 
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../includes/header.php';
 ?>
 
 <!-- ── Hero ──────────────────────────────────────────────── -->
@@ -53,11 +53,11 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                 Connecte-toi avec des clients qui ont besoin de ton talent. Postule, collabore, sois payé — en toute sécurité.
             </p>
             <div class="flex flex-wrap gap-4 pt-2">
-                <a href="/upc_freelance/public/register.php?role=freelancer"
+                <a href="public/register.php?role=freelancer"
                    class="bg-secondary text-on-secondary font-button text-button px-8 py-4 rounded-xl shadow-sm hover:shadow-md hover:opacity-90 transition-all active:scale-95">
                     Je suis freelance
                 </a>
-                <a href="/upc_freelance/public/register.php?role=client"
+                <a href="public/register.php?role=client"
                    class="bg-white text-secondary border-2 border-secondary font-button text-button px-8 py-4 rounded-xl hover:bg-secondary/5 transition-colors active:scale-95">
                     Je cherche du talent
                 </a>
@@ -149,7 +149,7 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
         <h2 class="font-h2 text-h2 text-primary text-center mb-12">Explorez par catégorie</h2>
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
             <?php foreach ($categories as $cat): ?>
-            <a href="/upc_freelance/app/projects/list.php?category=<?= $cat['id'] ?>"
+            <a href="app/projects/list.php?category=<?= $cat['id'] ?>"
                class="group p-6 bg-white rounded-xl border border-slate-100 hover:border-secondary hover:shadow-md transition-all text-center">
                 <div class="w-12 h-12 bg-surface-container-low group-hover:bg-secondary/10 rounded-xl flex items-center justify-center mx-auto mb-3 transition-colors">
                     <span class="material-symbols-outlined text-secondary"><?= h($cat['icon'] ?? 'work') ?></span>
@@ -167,11 +167,11 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
     <div class="max-w-7xl mx-auto px-8">
         <div class="flex justify-between items-center mb-10">
             <h2 class="font-h2 text-h2 text-primary">Projets récents</h2>
-            <a href="/upc_freelance/app/projects/list.php" class="text-secondary font-medium text-sm hover:underline">Voir tout →</a>
+            <a href="../app/projects/list.php" class="text-secondary font-medium text-sm hover:underline">Voir tout →</a>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <?php foreach ($projects as $p): ?>
-            <a href="/upc_freelance/app/projects/details.php?id=<?= $p['id'] ?>"
+            <a href="../app/projects/details.php?id=<?= $p['id'] ?>"
                class="group block bg-surface-container-low rounded-xl p-6 border border-slate-100 hover:border-secondary hover:shadow-md transition-all">
                 <div class="flex justify-between items-start mb-4">
                     <span class="inline-block text-xs bg-blue-50 text-secondary px-2 py-1 rounded-full font-medium">
@@ -205,11 +205,11 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
     <div class="max-w-3xl mx-auto px-8 text-center">
         <h2 class="font-h2 text-h2 text-white mb-4">Prêt à te lancer ?</h2>
         <p class="text-blue-200 font-body-lg mb-8">Rejoins des milliers d'étudiants qui monétisent leurs compétences dès aujourd'hui.</p>
-        <a href="/upc_freelance/public/register.php"
+        <a href="public/register.php"
            class="inline-block bg-white text-primary font-button text-button px-10 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg active:scale-95">
             Créer mon compte gratuitement
         </a>
     </div>
 </section>
 
-<?php require_once '/var/www/html/upc_freelance/includes/footer.php'; ?>
+<?php require_once '../includes/footer.php'; ?>

@@ -8,7 +8,7 @@ define('DB_HOST',    'localhost');
 define('DB_PORT',    '3306');
 define('DB_NAME',    'upc_freelance');
 define('DB_USER',    'root');         // ← changer en production
-define('DB_PASS',    '');             // ← changer en production
+define('DB_PASS',    'root1234');             // ← changer en production
 define('DB_CHARSET', 'utf8mb4');
 
 function getDB(): PDO {
