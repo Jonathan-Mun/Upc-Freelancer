@@ -1,7 +1,7 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Fonctions utilitaires
-// /var/www/html/upc_freelance/includes/functions.php
+// includes/functions.php
 // ============================================================
 
 require_once __DIR__ . '/db.php';
@@ -46,7 +46,7 @@ function verifyCsrf(): void {
 }
 
 // ─── Formatage ────────────────────────────────────────────────
-function money(float $amount, string $currency = 'XOF'): string {
+function money(float $amount, string $currency = 'USD'): string {
     return number_format($amount, 0, ',', ' ') . ' ' . $currency;
 }
 
@@ -146,11 +146,19 @@ function getUserWallet(int $userId): array {
     $stmt->execute([$userId]);
     $wallet = $stmt->fetch();
     if (!$wallet) {
-        // Créer le wallet à la volée
-        $pdo->prepare('INSERT INTO wallets (user_id, balance, locked) VALUES (?, 0, 0)')->execute([$userId]);
-        return ['balance' => 0, 'locked' => 0];
+        $pdo->prepare('INSERT INTO wallets (user_id, balance, locked) VALUES (?, 0.00, 0.00)')
+            ->execute([$userId]);
+        return ['balance' => 0.00, 'locked' => 0.00];
     }
     return $wallet;
+}
+
+// Retourne le profil étendu (freelancer_profiles ou client_profiles)
+function getExtendedProfile(int $userId, string $role): ?array {
+    $table = $role === 'freelancer' ? 'freelancer_profiles' : 'client_profiles';
+    $stmt  = getDB()->prepare("SELECT * FROM $table WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    return $stmt->fetch() ?: null;
 }
 
 function recordTransaction(int $userId, string $type, float $amount, ?int $contractId, string $desc): void {

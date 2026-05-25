@@ -11,7 +11,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_set_cookie_params([
         'lifetime' => 0,
         'path'     => '/',
-        'secure'   => true,   // HTTPS obligatoire en prod
+        'secure'   => false,  // true en HTTPS production
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
@@ -31,7 +31,9 @@ function currentUser(): ?array {
     if (!isLoggedIn()) return null;
     static $user = null;
     if ($user !== null) return $user;
-    $stmt = getDB()->prepare('SELECT * FROM users WHERE id = ? AND is_active = 1');
+
+    $pdo  = getDB();
+    $stmt = $pdo->prepare('SELECT * FROM users WHERE id = ? AND is_active = 1');
     $stmt->execute([$_SESSION['user_id']]);
     $user = $stmt->fetch() ?: null;
     return $user;
@@ -40,7 +42,7 @@ function currentUser(): ?array {
 function requireLogin(): void {
     if (!isLoggedIn()) {
         flash('error', 'Veuillez vous connecter pour accéder à cette page.');
-        redirect('/var/www/html/upc_freelance/public/login.php');
+        redirect('/upc_freelance/public/login.php');
     }
 }
 
@@ -55,7 +57,7 @@ function requireRole(string $role): void {
 
 function requireAdmin(): void {
     if (!isAdmin()) {
-        redirect('/var/www/html/upc_freelance/admin/login.php');
+        redirect('/upc_freelance/admin/login.php');
     }
 }
 
@@ -66,15 +68,16 @@ function loginUser(array $user): void {
     $_SESSION['user_role'] = $user['role'];
     $_SESSION['user_name'] = $user['first_name'] . ' ' . $user['last_name'];
 
-    // Mettre à jour last_login
-    getDB()->prepare('UPDATE users SET last_login_at = NOW() WHERE id = ?')->execute([$user['id']]);
+    getDB()->prepare('UPDATE users SET last_login_at = NOW() WHERE id = ?')
+           ->execute([$user['id']]);
 }
 
 function logoutUser(): void {
     $_SESSION = [];
     if (ini_get('session.use_cookies')) {
         $p = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 3600, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+        setcookie(session_name(), '', time() - 3600,
+            $p['path'], $p['domain'], $p['secure'], $p['httponly']);
     }
     session_destroy();
 }
@@ -93,10 +96,22 @@ function getUserById(int $id): ?array {
 }
 
 // ─── Register ─────────────────────────────────────────────────
-function registerUser(string $firstName, string $lastName, string $email, string $password, string $role, string $university = ''): int|false {
+// users  : données communes (auth + identité de base)
+// profils : données spécifiques au rôle
+function registerUser(
+    string $firstName,
+    string $lastName,
+    string $email,
+    string $password,
+    string $role,
+    string $university  = '',
+    string $fieldStudy  = '',
+    string $companyName = '',
+    string $website     = ''
+): int|false {
     $pdo = getDB();
 
-    // Vérifier email unique
+    // Vérifier unicité email
     $check = $pdo->prepare('SELECT id FROM users WHERE email = ?');
     $check->execute([$email]);
     if ($check->fetch()) return false;
@@ -104,22 +119,32 @@ function registerUser(string $firstName, string $lastName, string $email, string
     $uuid = generateUUID();
     $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
 
+    // Insérer dans users (données communes uniquement)
     $pdo->prepare('
-        INSERT INTO users (uuid, role, first_name, last_name, email, password_hash, university)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ')->execute([$uuid, $role, $firstName, $lastName, $email, $hash, $university]);
+        INSERT INTO users (uuid, role, first_name, last_name, email, password_hash, phone)
+        VALUES (?, ?, ?, ?, ?, ?, NULL)
+    ')->execute([$uuid, $role, $firstName, $lastName, $email, $hash]);
 
-    $userId = (int) $pdo->lastInsertId();
+    $userId = (int)$pdo->lastInsertId();
 
-    // Créer profil selon rôle
+    // Créer le profil étendu selon le rôle
     if ($role === 'freelancer') {
-        $pdo->prepare('INSERT INTO freelancer_profiles (user_id) VALUES (?)')->execute([$userId]);
+        $pdo->prepare('
+            INSERT INTO freelancer_profiles
+                (user_id, university, field_of_study, availability)
+            VALUES (?, ?, ?, "available")
+        ')->execute([$userId, $university ?: null, $fieldStudy ?: null]);
     } else {
-        $pdo->prepare('INSERT INTO client_profiles (user_id) VALUES (?)')->execute([$userId]);
+        $pdo->prepare('
+            INSERT INTO client_profiles
+                (user_id, company_name, website)
+            VALUES (?, ?, ?)
+        ')->execute([$userId, $companyName ?: null, $website ?: null]);
     }
 
-    // Créer wallet
-    $pdo->prepare('INSERT INTO wallets (user_id) VALUES (?)')->execute([$userId]);
+    // Créer le wallet
+    $pdo->prepare('INSERT INTO wallets (user_id, balance, locked) VALUES (?, 0.00, 0.00)')
+        ->execute([$userId]);
 
     return $userId;
 }

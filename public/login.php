@@ -4,14 +4,14 @@
 // /var/www/html/upc_freelance/public/login.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
+require_once '../includes/middleware.php';
+require_once '../includes/auth.php';
+require_once '../includes/functions.php';
 
-if (isLoggedIn()) redirect('/var/www/html/upc_freelance/app/dashboard.php');
+if (isLoggedIn()) redirect('../app/dashboard.php');
 
 $pageTitle = 'Connexion — UPC Freelance';
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../includes/header.php';
 ?>
 
 <div class="min-h-screen bg-surface-container-low flex items-center justify-center py-16 px-4">
@@ -37,7 +37,7 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
             <?php renderFlash(); ?>
 
-            <form action="/upc_freelance/auth/login.php" method="POST" class="space-y-5" novalidate>
+            <form action="../auth/login.php" method="POST" class="space-y-5" novalidate>
                 <?= csrfField() ?>
 
                 <div>
@@ -54,7 +54,7 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                 <div>
                     <div class="flex justify-between items-center mb-1.5">
                         <label class="block text-sm font-medium text-primary" for="password">Mot de passe</label>
-                        <a href="/upc_freelance/public/forgot-password.php" class="text-xs text-secondary hover:underline">Mot de passe oublié ?</a>
+                        <a href="../public/forgot-password.php" class="text-xs text-secondary hover:underline">Mot de passe oublié ?</a>
                     </div>
                     <div class="relative">
                         <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-xl">lock</span>
@@ -80,13 +80,13 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
 
             <p class="text-center text-sm text-on-surface-variant mt-6">
                 Pas encore de compte ?
-                <a href="/upc_freelance/public/register.php" class="text-secondary font-medium hover:underline">S'inscrire gratuitement</a>
+                <a href="../public/register.php" class="text-secondary font-medium hover:underline">S'inscrire gratuitement</a>
             </p>
         </div>
 
         <p class="text-center text-xs text-slate-400 mt-6">
             En vous connectant, vous acceptez nos
-            <a href="/upc_freelance/public/terms.php" class="hover:underline">Conditions d'utilisation</a>.
+            <a href="../public/terms.php" class="hover:underline">Conditions d'utilisation</a>.
         </p>
     </div>
 </div>
@@ -105,4 +105,4 @@ function togglePassword() {
 }
 </script>
 
-<?php require_once '/var/www/html/upc_freelance/includes/footer.php'; ?>
+<?php require_once '../includes/footer.php'; ?>

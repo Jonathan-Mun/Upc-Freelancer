@@ -4,10 +4,10 @@
 // /var/www/html/upc_freelance/app/profile/view.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 $pdo    = getDB();
 $userId = (int)($_GET['id'] ?? 0);
@@ -28,7 +28,7 @@ if (!$userRole) {
 }
 
 if ($userRole === 'freelancer') {
-    redirect('/var/www/html/upc_freelance/app/profile/freelancer-profile.php?id=' . $userId);
+    redirect('freelancer-profile.php?id=' . $userId);
 } else {
-    redirect('/var/www/html/upc_freelance/app/profile/client-profile.php?id=' . $userId);
+    redirect('client-profile.php?id=' . $userId);
 }

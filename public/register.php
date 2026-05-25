@@ -31,7 +31,9 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                 <span class="text-2xl font-bold text-primary">UPC Freelance</span>
             </div>
             <h1 class="text-h3 font-h3 text-primary">Créer votre compte</h1>
-            <p class="text-on-surface-variant text-sm mt-1">Rejoignez la communauté étudiante</p>
+            <p class="text-on-surface-variant text-sm mt-1">
+                <?= $role === 'freelancer' ? 'Rejoignez la communauté étudiante freelance' : 'Trouvez les meilleurs talents étudiants' ?>
+            </p>
         </div>
 
         <!-- Role toggle -->
@@ -47,8 +49,7 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                 Je suis Client
             </a>
         </div>
-
-        <!-- Card -->
+        <!-- Card formulaire -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-8">
             <?php renderFlash(); ?>
 
@@ -56,77 +57,150 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                 <?= csrfField() ?>
                 <input type="hidden" name="role" value="<?= h($role) ?>"/>
 
+                <!-- Prénom / Nom -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-primary mb-1.5">Prénom</label>
-                        <input type="text" name="first_name" required placeholder="Jean"
+                        <label class="block text-sm font-medium text-primary mb-1.5">Prénom <span class="text-red-500">*</span></label>
+                        <input type="text" name="first_name" required
+                               placeholder="Jean"
+                               value="<?= h($_POST['first_name'] ?? '') ?>"
                                class="w-full px-4 py-3 rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-sm transition-all"/>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-primary mb-1.5">Nom</label>
-                        <input type="text" name="last_name" required placeholder="Dupont"
+                        <label class="block text-sm font-medium text-primary mb-1.5">Nom <span class="text-red-500">*</span></label>
+                        <input type="text" name="last_name" required
+                               placeholder="Dupont"
+                               value="<?= h($_POST['last_name'] ?? '') ?>"
                                class="w-full px-4 py-3 rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-sm transition-all"/>
                     </div>
                 </div>
 
+                <!-- Email -->
                 <div>
-                    <label class="block text-sm font-medium text-primary mb-1.5">Adresse e-mail</label>
+                    <label class="block text-sm font-medium text-primary mb-1.5">Adresse e-mail <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-xl">mail</span>
-                        <input type="email" name="email" required placeholder="vous@exemple.com"
+                        <input type="email" name="email" required
+                               placeholder="vous@exemple.com"
+                               value="<?= h($_POST['email'] ?? '') ?>"
+                               class="w-full pl-10 pr-4 py-3 rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-sm transition-all"/>
+                    </div>
+                </div>
+
+                <?php if ($role === 'client'): ?>
+                <!-- ── Champs spécifiques CLIENT ──────────────────── -->
+                <div>
+                    <label class="block text-sm font-medium text-primary mb-1.5">
+                        Nom de l'entreprise / Organisation
+                        <span class="text-slate-400 font-normal text-xs ml-1">(optionnel)</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-xl">business</span>
+                        <input type="text" name="company_name"
+                               placeholder="Ex: Ma Startup SAS"
+                               value="<?= h($_POST['company_name'] ?? '') ?>"
                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-sm transition-all"/>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-primary mb-1.5">Université / École</label>
+                    <label class="block text-sm font-medium text-primary mb-1.5">
+                        Site web
+                        <span class="text-slate-400 font-normal text-xs ml-1">(optionnel)</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-xl">language</span>
+                        <input type="url" name="website"
+                               placeholder="https://monsite.com"
+                               value="<?= h($_POST['website'] ?? '') ?>"
+                               class="w-full pl-10 pr-4 py-3 rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-sm transition-all"/>
+                    </div>
+                </div>
+
+                <?php else: ?>
+                <!-- ── Champs spécifiques FREELANCER ─────────────── -->
+                <div>
+                    <label class="block text-sm font-medium text-primary mb-1.5">
+                        Université / École <span class="text-red-500">*</span>
+                    </label>
                     <div class="relative">
                         <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-xl">school</span>
-                        <input type="text" name="university" placeholder="Ex: Université Paris-Saclay"
+                        <input type="text" name="university" required
+                               placeholder="Ex: Université Félix Houphouët-Boigny"
+                               value="<?= h($_POST['university'] ?? '') ?>"
                                class="w-full pl-10 pr-4 py-3 rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-sm transition-all"/>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-primary mb-1.5">Mot de passe</label>
+                    <label class="block text-sm font-medium text-primary mb-1.5">
+                        Filière / Domaine d'étude
+                        <span class="text-slate-400 font-normal text-xs ml-1">(optionnel)</span>
+                    </label>
+                    <div class="relative">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-xl">menu_book</span>
+                        <input type="text" name="field_of_study"
+                               placeholder="Ex: Informatique, Design, Marketing..."
+                               value="<?= h($_POST['field_of_study'] ?? '') ?>"
+                               class="w-full pl-10 pr-4 py-3 rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-sm transition-all"/>
+                    </div>
+                </div>
+                <?php endif; ?>
+
+                <!-- Mot de passe -->
+                <div>
+                    <label class="block text-sm font-medium text-primary mb-1.5">Mot de passe <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-xl">lock</span>
-                        <input type="password" id="pw1" name="password" required placeholder="Minimum 8 caractères"
+                        <input type="password" id="pw1" name="password" required
+                               placeholder="Minimum 8 caractères"
                                class="w-full pl-10 pr-12 py-3 rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-sm transition-all"/>
-                        <button type="button" onclick="togglePw('pw1','eye1')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                        <button type="button" onclick="togglePw('pw1','eye1')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                             <span id="eye1" class="material-symbols-outlined text-xl">visibility</span>
                         </button>
                     </div>
-                    <!-- Force indicateur -->
+                    <!-- Indicateur force -->
                     <div class="mt-2 flex gap-1">
                         <div id="s1" class="h-1 flex-1 rounded-full bg-slate-200 transition-colors"></div>
                         <div id="s2" class="h-1 flex-1 rounded-full bg-slate-200 transition-colors"></div>
                         <div id="s3" class="h-1 flex-1 rounded-full bg-slate-200 transition-colors"></div>
                         <div id="s4" class="h-1 flex-1 rounded-full bg-slate-200 transition-colors"></div>
                     </div>
+                    <p id="pw-hint" class="text-xs text-slate-400 mt-1 hidden"></p>
                 </div>
 
+                <!-- Confirmer mot de passe -->
                 <div>
-                    <label class="block text-sm font-medium text-primary mb-1.5">Confirmer le mot de passe</label>
+                    <label class="block text-sm font-medium text-primary mb-1.5">Confirmer le mot de passe <span class="text-red-500">*</span></label>
                     <div class="relative">
                         <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-xl">lock</span>
-                        <input type="password" id="pw2" name="password_confirm" required placeholder="Répéter le mot de passe"
+                        <input type="password" id="pw2" name="password_confirm" required
+                               placeholder="Répéter le mot de passe"
                                class="w-full pl-10 pr-12 py-3 rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-sm transition-all"/>
-                        <button type="button" onclick="togglePw('pw2','eye2')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                        <button type="button" onclick="togglePw('pw2','eye2')" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                             <span id="eye2" class="material-symbols-outlined text-xl">visibility</span>
                         </button>
                     </div>
+                    <p id="pw-match" class="text-xs mt-1 hidden"></p>
                 </div>
 
+                <!-- CGU -->
                 <div class="flex items-start gap-2 pt-1">
-                    <input type="checkbox" id="terms" name="terms" required class="mt-1 rounded border-outline-variant text-secondary"/>
+                    <input type="checkbox" id="terms" name="terms" required
+                           class="mt-1 rounded border-outline-variant text-secondary flex-shrink-0"/>
                     <label for="terms" class="text-sm text-on-surface-variant">
-                        J'accepte les <a href="/upc_freelance/public/terms.php" class="text-secondary hover:underline">Conditions d'utilisation</a> et la Politique de confidentialité
+                        J'accepte les <a href="/upc_freelance/public/terms.php" class="text-secondary hover:underline">Conditions d'utilisation</a>
+                        et la Politique de confidentialité
                     </label>
                 </div>
 
+                <!-- Bouton submit -->
                 <button type="submit"
-                        class="w-full bg-primary text-on-primary font-button text-button py-3.5 rounded-xl hover:opacity-90 transition-opacity active:scale-95 shadow-sm mt-2">
+                        class="w-full font-button text-button py-3.5 rounded-xl hover:opacity-90 transition-opacity active:scale-95 shadow-sm mt-2
+                               <?= $role === 'freelancer' ? 'bg-primary text-on-primary' : 'bg-secondary text-on-secondary' ?>">
+                    <span class="material-symbols-outlined align-middle mr-1 text-base">
+                        <?= $role === 'freelancer' ? 'school' : 'business' ?>
+                    </span>
                     Créer mon compte <?= $role === 'freelancer' ? 'Freelancer' : 'Client' ?>
                 </button>
             </form>
@@ -143,22 +217,52 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
 function togglePw(inputId, iconId) {
     const inp = document.getElementById(inputId);
     const ico = document.getElementById(iconId);
-    inp.type = inp.type === 'password' ? 'text' : 'password';
+    inp.type  = inp.type === 'password' ? 'text' : 'password';
     ico.textContent = inp.type === 'password' ? 'visibility' : 'visibility_off';
 }
 
-document.getElementById('pw1').addEventListener('input', function() {
-    const v = this.value, bars = [s1,s2,s3,s4];
-    let score = 0;
-    if (v.length >= 8)  score++;
-    if (/[A-Z]/.test(v)) score++;
-    if (/[0-9]/.test(v)) score++;
-    if (/[^A-Za-z0-9]/.test(v)) score++;
-    const colors = ['bg-red-400','bg-orange-400','bg-yellow-400','bg-green-500'];
-    bars.forEach((b,i) => {
-        b.className = 'h-1 flex-1 rounded-full transition-colors ' + (i < score ? colors[score-1] : 'bg-slate-200');
+// Indicateur force mot de passe
+document.getElementById('pw1').addEventListener('input', function () {
+    const v    = this.value;
+    const bars = [s1, s2, s3, s4];
+    const hint = document.getElementById('pw-hint');
+    let score  = 0;
+    if (v.length >= 8)           score++;
+    if (/[A-Z]/.test(v))         score++;
+    if (/[0-9]/.test(v))         score++;
+    if (/[^A-Za-z0-9]/.test(v))  score++;
+
+    const colors = ['bg-red-400', 'bg-orange-400', 'bg-yellow-400', 'bg-green-500'];
+    const labels = ['Très faible', 'Faible', 'Moyen', 'Fort'];
+    bars.forEach((b, i) => {
+        b.className = 'h-1 flex-1 rounded-full transition-colors ' + (i < score ? colors[score - 1] : 'bg-slate-200');
     });
+    if (v.length > 0) {
+        hint.className  = 'text-xs mt-1 ' + ['text-red-400','text-orange-400','text-yellow-500','text-green-600'][score - 1] || 'text-slate-400';
+        hint.textContent = score > 0 ? 'Force : ' + labels[score - 1] : '';
+        hint.classList.remove('hidden');
+    } else {
+        hint.classList.add('hidden');
+    }
+    checkMatch();
 });
+
+// Vérification correspondance
+document.getElementById('pw2').addEventListener('input', checkMatch);
+function checkMatch() {
+    const p1   = document.getElementById('pw1').value;
+    const p2   = document.getElementById('pw2').value;
+    const msg  = document.getElementById('pw-match');
+    if (!p2) { msg.classList.add('hidden'); return; }
+    if (p1 === p2) {
+        msg.textContent  = '✓ Les mots de passe correspondent';
+        msg.className    = 'text-xs mt-1 text-green-600';
+    } else {
+        msg.textContent  = '✗ Les mots de passe ne correspondent pas';
+        msg.className    = 'text-xs mt-1 text-red-500';
+    }
+    msg.classList.remove('hidden');
+}
 </script>
 
 <?php require_once '/var/www/html/upc_freelance/includes/footer.php'; ?>

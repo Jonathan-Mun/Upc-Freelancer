@@ -1,5 +1,5 @@
 -- ============================================================
--- UPC FREELANCE — Base de données complète
+-- UPC FREELANCE — Base de données complète v2
 -- Encodage : UTF-8 | Moteur : InnoDB
 -- ============================================================
 
@@ -7,6 +7,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 SET time_zone = "+00:00";
 
+DROP DATABASE IF EXISTS `upc_freelance`;
 CREATE DATABASE IF NOT EXISTS `upc_freelance`
     CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
@@ -15,29 +16,28 @@ USE `upc_freelance`;
 
 -- ============================================================
 -- TABLE : users
+-- Contient UNIQUEMENT les données d'authentification et
+-- d'identité communes aux deux rôles
 -- ============================================================
 CREATE TABLE `users` (
-    `id`                INT UNSIGNED    NOT NULL AUTO_INCREMENT,
-    `uuid`              CHAR(36)        NOT NULL,
-    `role`              ENUM('client','freelancer') NOT NULL,
-    `first_name`        VARCHAR(80)     NOT NULL,
-    `last_name`         VARCHAR(80)     NOT NULL,
-    `email`             VARCHAR(180)    NOT NULL,
-    `password_hash`     VARCHAR(255)    NOT NULL,
-    `phone`             VARCHAR(20)     DEFAULT NULL,
-    `avatar`            VARCHAR(255)    DEFAULT NULL,
-    `bio`               TEXT            DEFAULT NULL,
-    `university`        VARCHAR(120)    DEFAULT NULL,
-    `field_of_study`    VARCHAR(120)    DEFAULT NULL,
-    `is_verified`       TINYINT(1)      NOT NULL DEFAULT 0,
-    `is_active`         TINYINT(1)      NOT NULL DEFAULT 1,
-    `email_verified_at` DATETIME        DEFAULT NULL,
-    `remember_token`    VARCHAR(100)    DEFAULT NULL,
-    `reset_token`       VARCHAR(100)    DEFAULT NULL,
-    `reset_token_expires_at` DATETIME   DEFAULT NULL,
-    `last_login_at`     DATETIME        DEFAULT NULL,
-    `created_at`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at`        DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `id`                     INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    `uuid`                   CHAR(36)      NOT NULL,
+    `role`                   ENUM('client','freelancer') NOT NULL,
+    `first_name`             VARCHAR(80)   NOT NULL,
+    `last_name`              VARCHAR(80)   NOT NULL,
+    `email`                  VARCHAR(180)  NOT NULL,
+    `password_hash`          VARCHAR(255)  NOT NULL,
+    `phone`                  VARCHAR(20)   DEFAULT NULL,
+    `avatar`                 VARCHAR(255)  DEFAULT NULL,
+    `is_verified`            TINYINT(1)    NOT NULL DEFAULT 0,
+    `is_active`              TINYINT(1)    NOT NULL DEFAULT 1,
+    `email_verified_at`      DATETIME      DEFAULT NULL,
+    `remember_token`         VARCHAR(100)  DEFAULT NULL,
+    `reset_token`            VARCHAR(100)  DEFAULT NULL,
+    `reset_token_expires_at` DATETIME      DEFAULT NULL,
+    `last_login_at`          DATETIME      DEFAULT NULL,
+    `created_at`             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`             DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_users_uuid`  (`uuid`),
     UNIQUE KEY `uq_users_email` (`email`),
@@ -47,22 +47,31 @@ CREATE TABLE `users` (
 
 -- ============================================================
 -- TABLE : freelancer_profiles
+-- Données spécifiques aux freelancers (étudiants)
+-- bio, université, compétences, tarif, liens pro, stats
 -- ============================================================
 CREATE TABLE `freelancer_profiles` (
-    `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `user_id`       INT UNSIGNED NOT NULL,
-    `title`         VARCHAR(120) DEFAULT NULL,
-    `hourly_rate`   DECIMAL(10,2) DEFAULT NULL,
-    `availability`  ENUM('available','busy','unavailable') NOT NULL DEFAULT 'available',
-    `rating`        DECIMAL(3,2) DEFAULT NULL,
-    `total_reviews` INT UNSIGNED DEFAULT 0,
-    `total_earned`  DECIMAL(12,2) DEFAULT 0.00,
-    `skills`        JSON         DEFAULT NULL,
-    `portfolio_url` VARCHAR(255) DEFAULT NULL,
-    `linkedin_url`  VARCHAR(255) DEFAULT NULL,
-    `github_url`    VARCHAR(255) DEFAULT NULL,
-    `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `id`             INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    `user_id`        INT UNSIGNED  NOT NULL,
+    -- Identité académique
+    `university`     VARCHAR(120)  DEFAULT NULL,
+    `field_of_study` VARCHAR(120)  DEFAULT NULL,
+    -- Identité professionnelle
+    `title`          VARCHAR(120)  DEFAULT NULL,
+    `bio`            TEXT          DEFAULT NULL,
+    `hourly_rate`    DECIMAL(10,2) DEFAULT NULL,
+    `availability`   ENUM('available','busy','unavailable') NOT NULL DEFAULT 'available',
+    -- Compétences & liens
+    `skills`         JSON          DEFAULT NULL,
+    `portfolio_url` JSON          DEFAULT NULL,
+    `linkedin_url`   VARCHAR(255)  DEFAULT NULL,
+    `github_url`     VARCHAR(255)  DEFAULT NULL,
+    -- Stats calculées
+    `rating`         DECIMAL(3,2)  DEFAULT NULL,
+    `total_reviews`  INT UNSIGNED  DEFAULT 0,
+    `total_earned`   DECIMAL(12,2) DEFAULT 0.00,
+    `created_at`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_fp_user` (`user_id`),
     CONSTRAINT `fk_fp_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
@@ -70,17 +79,22 @@ CREATE TABLE `freelancer_profiles` (
 
 -- ============================================================
 -- TABLE : client_profiles
+-- Données spécifiques aux clients
+-- bio, entreprise, site web, stats
 -- ============================================================
 CREATE TABLE `client_profiles` (
-    `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `user_id`       INT UNSIGNED NOT NULL,
-    `company_name`  VARCHAR(120) DEFAULT NULL,
-    `website`       VARCHAR(255) DEFAULT NULL,
-    `rating`        DECIMAL(3,2) DEFAULT NULL,
-    `total_reviews` INT UNSIGNED DEFAULT 0,
+    `id`            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    `user_id`       INT UNSIGNED  NOT NULL,
+    -- Identité
+    `bio`           TEXT          DEFAULT NULL,
+    `company_name`  VARCHAR(120)  DEFAULT NULL,
+    `website`       VARCHAR(255)  DEFAULT NULL,
+    -- Stats calculées
+    `rating`        DECIMAL(3,2)  DEFAULT NULL,
+    `total_reviews` INT UNSIGNED  DEFAULT 0,
     `total_spent`   DECIMAL(12,2) DEFAULT 0.00,
-    `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `created_at`    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_cp_user` (`user_id`),
     CONSTRAINT `fk_cp_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
@@ -104,49 +118,49 @@ CREATE TABLE `categories` (
 -- TABLE : projects
 -- ============================================================
 CREATE TABLE `projects` (
-    `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `uuid`          CHAR(36)     NOT NULL,
-    `client_id`     INT UNSIGNED NOT NULL,
-    `category_id`   INT UNSIGNED DEFAULT NULL,
-    `title`         VARCHAR(200) NOT NULL,
-    `description`   LONGTEXT     NOT NULL,
+    `id`            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    `uuid`          CHAR(36)      NOT NULL,
+    `client_id`     INT UNSIGNED  NOT NULL,
+    `category_id`   INT UNSIGNED  DEFAULT NULL,
+    `title`         VARCHAR(200)  NOT NULL,
+    `description`   LONGTEXT      NOT NULL,
     `budget_min`    DECIMAL(10,2) DEFAULT NULL,
     `budget_max`    DECIMAL(10,2) DEFAULT NULL,
-    `deadline`      DATE         DEFAULT NULL,
-    `skills_needed` JSON         DEFAULT NULL,
-    `attachments`   JSON         DEFAULT NULL,
+    `deadline`      DATE          DEFAULT NULL,
+    `skills_needed` JSON          DEFAULT NULL,
+    `attachments`   JSON          DEFAULT NULL,
     `status`        ENUM('open','in_progress','completed','cancelled','disputed') NOT NULL DEFAULT 'open',
     `visibility`    ENUM('public','private') NOT NULL DEFAULT 'public',
-    `views_count`   INT UNSIGNED DEFAULT 0,
-    `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `views_count`   INT UNSIGNED  DEFAULT 0,
+    `created_at`    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uq_proj_uuid` (`uuid`),
-    INDEX `idx_proj_client`   (`client_id`),
-    INDEX `idx_proj_status`   (`status`),
-    INDEX `idx_proj_category` (`category_id`),
-    CONSTRAINT `fk_proj_client`   FOREIGN KEY (`client_id`)   REFERENCES `users`(`id`) ON DELETE CASCADE,
-    CONSTRAINT `fk_proj_category` FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`) ON DELETE SET NULL
+    UNIQUE KEY `uq_proj_uuid`    (`uuid`),
+    INDEX `idx_proj_client`      (`client_id`),
+    INDEX `idx_proj_status`      (`status`),
+    INDEX `idx_proj_category`    (`category_id`),
+    CONSTRAINT `fk_proj_client`   FOREIGN KEY (`client_id`)   REFERENCES `users`(`id`)       ON DELETE CASCADE,
+    CONSTRAINT `fk_proj_category` FOREIGN KEY (`category_id`) REFERENCES `categories`(`id`)  ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
--- TABLE : postulations (candidatures)
+-- TABLE : postulations
 -- ============================================================
 CREATE TABLE `postulations` (
-    `id`             INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `project_id`     INT UNSIGNED NOT NULL,
-    `freelancer_id`  INT UNSIGNED NOT NULL,
-    `cover_letter`   TEXT         NOT NULL,
+    `id`             INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    `project_id`     INT UNSIGNED  NOT NULL,
+    `freelancer_id`  INT UNSIGNED  NOT NULL,
+    `cover_letter`   TEXT          NOT NULL,
     `proposed_price` DECIMAL(10,2) NOT NULL,
-    `proposed_days`  INT UNSIGNED DEFAULT NULL,
+    `proposed_days`  INT UNSIGNED  DEFAULT NULL,
     `status`         ENUM('pending','accepted','rejected','withdrawn') NOT NULL DEFAULT 'pending',
-    `created_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    `updated_at`     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `created_at`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `updated_at`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_postul` (`project_id`, `freelancer_id`),
     INDEX `idx_postul_freelancer` (`freelancer_id`),
-    CONSTRAINT `fk_postul_project`    FOREIGN KEY (`project_id`)    REFERENCES `projects`(`id`)  ON DELETE CASCADE,
-    CONSTRAINT `fk_postul_freelancer` FOREIGN KEY (`freelancer_id`) REFERENCES `users`(`id`)     ON DELETE CASCADE
+    CONSTRAINT `fk_postul_project`    FOREIGN KEY (`project_id`)    REFERENCES `projects`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_postul_freelancer` FOREIGN KEY (`freelancer_id`) REFERENCES `users`(`id`)    ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
@@ -167,9 +181,9 @@ CREATE TABLE `contracts` (
     `created_at`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     `updated_at`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uq_contract_uuid` (`uuid`),
-    INDEX `idx_contract_client`     (`client_id`),
-    INDEX `idx_contract_freelancer` (`freelancer_id`),
+    UNIQUE KEY `uq_contract_uuid`    (`uuid`),
+    INDEX `idx_contract_client`      (`client_id`),
+    INDEX `idx_contract_freelancer`  (`freelancer_id`),
     CONSTRAINT `fk_contract_project`     FOREIGN KEY (`project_id`)     REFERENCES `projects`(`id`)     ON DELETE CASCADE,
     CONSTRAINT `fk_contract_client`      FOREIGN KEY (`client_id`)      REFERENCES `users`(`id`)        ON DELETE CASCADE,
     CONSTRAINT `fk_contract_freelancer`  FOREIGN KEY (`freelancer_id`)  REFERENCES `users`(`id`)        ON DELETE CASCADE,
@@ -213,22 +227,22 @@ CREATE TABLE `wallets` (
 -- TABLE : transactions
 -- ============================================================
 CREATE TABLE `transactions` (
-    `id`          INT UNSIGNED  NOT NULL AUTO_INCREMENT,
-    `uuid`        CHAR(36)      NOT NULL,
-    `user_id`     INT UNSIGNED  NOT NULL,
-    `contract_id` INT UNSIGNED  DEFAULT NULL,
-    `type`        ENUM('deposit','withdrawal','payment','refund','lock','unlock') NOT NULL,
-    `amount`      DECIMAL(12,2) NOT NULL,
+    `id`             INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    `uuid`           CHAR(36)      NOT NULL,
+    `user_id`        INT UNSIGNED  NOT NULL,
+    `contract_id`    INT UNSIGNED  DEFAULT NULL,
+    `type`           ENUM('deposit','withdrawal','payment','refund','lock','unlock') NOT NULL,
+    `amount`         DECIMAL(12,2) NOT NULL,
     `balance_before` DECIMAL(12,2) NOT NULL,
     `balance_after`  DECIMAL(12,2) NOT NULL,
-    `description` VARCHAR(255)  DEFAULT NULL,
-    `reference`   VARCHAR(100)  DEFAULT NULL,
-    `status`      ENUM('pending','completed','failed','cancelled') NOT NULL DEFAULT 'completed',
-    `created_at`  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `description`    VARCHAR(255)  DEFAULT NULL,
+    `reference`      VARCHAR(100)  DEFAULT NULL,
+    `status`         ENUM('pending','completed','failed','cancelled') NOT NULL DEFAULT 'completed',
+    `created_at`     DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uq_tx_uuid` (`uuid`),
-    INDEX `idx_tx_user`     (`user_id`),
-    INDEX `idx_tx_contract` (`contract_id`),
+    UNIQUE KEY `uq_tx_uuid`  (`uuid`),
+    INDEX `idx_tx_user`      (`user_id`),
+    INDEX `idx_tx_contract`  (`contract_id`),
     CONSTRAINT `fk_tx_user`     FOREIGN KEY (`user_id`)     REFERENCES `users`(`id`)     ON DELETE CASCADE,
     CONSTRAINT `fk_tx_contract` FOREIGN KEY (`contract_id`) REFERENCES `contracts`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -237,13 +251,13 @@ CREATE TABLE `transactions` (
 -- TABLE : reviews
 -- ============================================================
 CREATE TABLE `reviews` (
-    `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `contract_id` INT UNSIGNED NOT NULL,
-    `reviewer_id` INT UNSIGNED NOT NULL,
-    `reviewed_id` INT UNSIGNED NOT NULL,
+    `id`          INT UNSIGNED     NOT NULL AUTO_INCREMENT,
+    `contract_id` INT UNSIGNED     NOT NULL,
+    `reviewer_id` INT UNSIGNED     NOT NULL,
+    `reviewed_id` INT UNSIGNED     NOT NULL,
     `rating`      TINYINT UNSIGNED NOT NULL CHECK (`rating` BETWEEN 1 AND 5),
-    `comment`     TEXT         DEFAULT NULL,
-    `created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `comment`     TEXT             DEFAULT NULL,
+    `created_at`  DATETIME         NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_review` (`contract_id`, `reviewer_id`),
     INDEX `idx_review_reviewed` (`reviewed_id`),
@@ -265,7 +279,8 @@ CREATE TABLE `notifications` (
     `is_read`    TINYINT(1)   NOT NULL DEFAULT 0,
     `created_at` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    INDEX `idx_notif_user` (`user_id`),
+    INDEX `idx_notif_user`   (`user_id`),
+    INDEX `idx_notif_is_read`(`is_read`),
     CONSTRAINT `fk_notif_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -282,7 +297,8 @@ CREATE TABLE `verification_docs` (
     `reviewed_at` DATETIME     DEFAULT NULL,
     `created_at`  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
-    INDEX `idx_vdoc_user` (`user_id`),
+    INDEX `idx_vdoc_user`   (`user_id`),
+    INDEX `idx_vdoc_status` (`status`),
     CONSTRAINT `fk_vdoc_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -290,12 +306,12 @@ CREATE TABLE `verification_docs` (
 -- TABLE : admin_users
 -- ============================================================
 CREATE TABLE `admin_users` (
-    `id`           INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    `name`         VARCHAR(120) NOT NULL,
-    `email`        VARCHAR(180) NOT NULL,
+    `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `name`          VARCHAR(120) NOT NULL,
+    `email`         VARCHAR(180) NOT NULL,
     `password_hash` VARCHAR(255) NOT NULL,
-    `is_super`     TINYINT(1)   NOT NULL DEFAULT 0,
-    `created_at`   DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `is_super`      TINYINT(1)   NOT NULL DEFAULT 0,
+    `created_at`    DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`id`),
     UNIQUE KEY `uq_admin_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -305,17 +321,19 @@ CREATE TABLE `admin_users` (
 -- ============================================================
 
 INSERT INTO `categories` (`name`, `slug`, `icon`, `description`) VALUES
-('Développement Web',     'dev-web',       'code',            'Sites web, applications, APIs'),
-('Design & UI/UX',        'design',        'palette',         'Logos, maquettes, interfaces'),
-('Marketing Digital',     'marketing',     'trending_up',     'SEO, réseaux sociaux, campagnes'),
-('Rédaction & Contenu',   'redaction',     'edit_note',       'Articles, copywriting, traduction'),
-('Data & Analyse',        'data',          'bar_chart',       'Data science, statistiques, BI'),
-('Vidéo & Audio',         'video-audio',   'videocam',        'Montage, podcasts, animation'),
-('Comptabilité & Finance','finance',       'account_balance', 'Comptabilité, conseil financier'),
-('Informatique & Réseaux','informatique',  'computer',        'Systèmes, réseaux, cybersécurité');
+('Développement Web',      'dev-web',       'code',             'Sites web, applications, APIs'),
+('Design & UI/UX',         'design',        'palette',          'Logos, maquettes, interfaces'),
+('Marketing Digital',      'marketing',     'trending_up',      'SEO, réseaux sociaux, campagnes'),
+('Rédaction & Contenu',    'redaction',     'edit_note',        'Articles, copywriting, traduction'),
+('Data & Analyse',         'data',          'bar_chart',        'Data science, statistiques, BI'),
+('Vidéo & Audio',          'video-audio',   'videocam',         'Montage, podcasts, animation'),
+('Comptabilité & Finance', 'finance',       'account_balance',  'Comptabilité, conseil financier'),
+('Informatique & Réseaux', 'informatique',  'computer',         'Systèmes, réseaux, cybersécurité');
 
 -- Admin par défaut (mot de passe : Admin@2025)
+-- ⚠️ Changer ce mot de passe immédiatement en production !
 INSERT INTO `admin_users` (`name`, `email`, `password_hash`, `is_super`) VALUES
-('Super Admin', 'admin@upcfreelance.com', '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1);
+('Super Admin', 'admin@upcfreelance.com',
+ '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1);
 
 SET FOREIGN_KEY_CHECKS = 1;

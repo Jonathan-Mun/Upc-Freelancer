@@ -4,10 +4,10 @@
 // /var/www/html/upc_freelance/app/dashboard.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../includes/middleware.php';
+require_once '../includes/auth.php';
+require_once '../includes/functions.php';
+require_once '../includes/db.php';
 
 requireLogin();
 
@@ -64,7 +64,7 @@ $recentNotifs = $recentNotifs->fetchAll();
 
 $pageTitle  = 'Tableau de bord — UPC Freelance';
 $appLayout  = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../includes/header.php';
 ?>
 
 <!-- Flash -->
@@ -287,5 +287,5 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
 
 <?php
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/footer.php';
+require_once '../includes/footer.php';
 ?>
