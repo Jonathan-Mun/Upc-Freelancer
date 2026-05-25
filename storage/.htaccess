@@ -1,0 +1,18 @@
+# ============================================================
+# UPC FREELANCE — Protection répertoire storage
+# /var/www/html/Upc-freelancer/storage/.htaccess
+# ============================================================
+
+# Interdire l'exécution de scripts PHP
+<FilesMatch "\.(php|php3|php4|php5|phtml|pl|py|jsp|asp|htm|html|shtml|sh|cgi)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Autoriser uniquement images et PDF
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|pdf)$">
+    Order Allow,Deny
+    Allow from all
+</FilesMatch>
+
+Options -Indexes

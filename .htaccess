@@ -1,0 +1,49 @@
+# ============================================================
+# UPC FREELANCE — .htaccess racine
+# /var/www/html/Upc_freelancer/.htaccess
+# ============================================================
+
+Options -Indexes
+ServerSignature Off
+
+# Activer le moteur de réécriture
+RewriteEngine On
+
+# Forcer HTTPS en production (décommenter)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Bloquer l'accès aux fichiers sensibles
+<FilesMatch "(\.env|\.git|composer\.json|composer\.lock|package\.json)">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Bloquer l'accès direct aux includes
+RewriteRule ^includes/.*$ - [F,L]
+
+# Redirection racine vers la page d'accueil
+RewriteRule ^$ /upc_freelance/public/index.php [L,R=301]
+
+# Headers de sécurité
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "DENY"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-XSS-Protection "1; mode=block"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Compression GZIP
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript
+</IfModule>
+
+# Cache navigateur
+<IfModule mod_expires.c>
+    ExpiresActive On
+    ExpiresByType image/jpg  "access plus 1 month"
+    ExpiresByType image/jpeg "access plus 1 month"
+    ExpiresByType image/png  "access plus 1 month"
+    ExpiresByType text/css   "access plus 1 week"
+    ExpiresByType text/javascript "access plus 1 week"
+</IfModule>
