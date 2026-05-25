@@ -1,13 +1,13 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Retrait wallet
-// /var/www/html/upc_freelance/app/wallet/withdraw.php
+// ../../app/wallet/withdraw.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 requireLogin();
 
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             '/upc_freelance/app/wallet/history.php');
 
         flash('success', 'Demande de retrait de ' . money($amount) . ' envoyée avec succès !');
-        redirect('/var/www/html/upc_freelance/app/wallet/index.php');
+        redirect('../../app/wallet/index.php');
     } else {
         flash('error', implode(' ', $errors));
     }
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $pageTitle = 'Retirer des fonds — UPC Freelance';
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <div class="mb-8">
@@ -131,4 +131,4 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
     </form>
 </div>
 
-<?php $appLayout = true; require_once '/var/www/html/upc_freelance/includes/footer.php'; ?>
+<?php $appLayout = true; require_once '../../includes/footer.php'; ?>

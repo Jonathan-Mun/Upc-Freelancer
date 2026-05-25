@@ -1,13 +1,13 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Historique complet des transactions
-// /var/www/html/upc_freelance/app/wallet/history.php
+// ../../app/wallet/history.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 requireLogin();
 
@@ -47,7 +47,7 @@ $wallet = getUserWallet($user['id']);
 
 $pageTitle = 'Historique des transactions — UPC Freelance';
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <div class="flex items-center justify-between mb-8">
@@ -165,4 +165,4 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
 </div>
 <?php endif; ?>
 
-<?php $appLayout = true; require_once '/var/www/html/upc_freelance/includes/footer.php'; ?>
+<?php $appLayout = true; require_once '../../includes/footer.php'; ?>

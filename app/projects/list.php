@@ -1,13 +1,13 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Liste des projets (Marketplace)
-// /var/www/html/upc_freelance/app/projects/list.php
+// ../../app/projects/list.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 $pdo = getDB();
 
@@ -75,7 +75,7 @@ $categories = $pdo->query('SELECT * FROM categories WHERE is_active = 1 ORDER BY
 
 $pageTitle = 'Marketplace — UPC Freelance';
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <!-- En-tête -->
@@ -259,5 +259,5 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
 
 <?php
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/footer.php';
+require_once '../../includes/footer.php';
 ?>

@@ -1,13 +1,13 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Créer un projet
-// /var/www/html/upc_freelance/app/projects/create.php
+// ../../app/projects/create.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 requireRole('client');
 
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $projectId = (int)$pdo->lastInsertId();
         flash('success', 'Projet publié avec succès !');
-        redirect('/var/www/html/upc_freelance/app/projects/details.php?id=' . $projectId);
+        redirect('../../app/projects/details.php?id=' . $projectId);
     } else {
         flash('error', implode(' ', $errors));
     }
@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $categories = getDB()->query('SELECT * FROM categories WHERE is_active = 1 ORDER BY name')->fetchAll();
 $pageTitle  = 'Créer un projet — UPC Freelance';
 $appLayout  = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <!-- En-tête -->
@@ -217,5 +217,5 @@ renderTags();
 
 <?php
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/footer.php';
+require_once '../../includes/footer.php';
 ?>

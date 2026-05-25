@@ -1,20 +1,20 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Modifier un projet
-// /var/www/html/upc_freelance/app/projects/edit.php
+// ../../app/projects/edit.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 requireRole('client');
 
 $user      = currentUser();
 $pdo       = getDB();
 $projectId = (int)($_GET['id'] ?? 0);
-if (!$projectId) redirect('/var/www/html/upc_freelance/app/projects/my-projects.php');
+if (!$projectId) redirect('../../app/projects/my-projects.php');
 
 $stmt = $pdo->prepare('SELECT * FROM projects WHERE id = ? AND client_id = ?');
 $stmt->execute([$projectId, $user['id']]);
@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      $skills ? json_encode($skills) : null,
                      $projectId, $user['id']]);
         flash('success', 'Projet mis à jour avec succès !');
-        redirect('/var/www/html/upc_freelance/app/projects/details.php?id=' . $projectId);
+        redirect('../../app/projects/details.php?id=' . $projectId);
     }
 }
 
@@ -52,7 +52,7 @@ $skills = $project['skills_needed'] ? json_decode($project['skills_needed'], tru
 
 $pageTitle = 'Modifier le projet — UPC Freelance';
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <?php renderFlash(); ?>
@@ -129,4 +129,4 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
     </form>
 </div>
 
-<?php $appLayout = true; require_once '/var/www/html/upc_freelance/includes/footer.php'; ?>
+<?php $appLayout = true; require_once '../../includes/footer.php'; ?>

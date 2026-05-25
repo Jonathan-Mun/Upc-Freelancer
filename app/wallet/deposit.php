@@ -1,13 +1,13 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Recharger mon wallet
-// /var/www/html/upc_freelance/app/wallet/deposit.php
+// ../../app/wallet/deposit.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 requireLogin();
 
@@ -32,13 +32,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         sendNotification($user['id'], 'deposit_success', 'Rechargement réussi !',
             money($amount) . ' ont été crédités sur votre wallet.', '/upc_freelance/app/wallet/index.php');
         flash('success', money($amount) . ' ont été ajoutés à votre wallet !');
-        redirect('/var/www/html/upc_freelance/app/wallet/index.php');
+        redirect('../../app/wallet/index.php');
     }
 }
 
 $pageTitle = 'Recharger mon wallet — UPC Freelance';
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <div class="mb-8">
@@ -130,5 +130,5 @@ function setAmount(val) {
 
 <?php
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/footer.php';
+require_once '../../includes/footer.php';
 ?>

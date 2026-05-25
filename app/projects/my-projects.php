@@ -1,13 +1,13 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Mes projets (client)
-// /var/www/html/upc_freelance/app/projects/my-projects.php
+// ../../app/projects/my-projects.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 requireRole('client');
 
@@ -36,7 +36,7 @@ $projects = $stmt->fetchAll();
 
 $pageTitle = 'Mes projets — UPC Freelance';
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <?php renderFlash(); ?>
@@ -144,5 +144,5 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
 
 <?php
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/footer.php';
+require_once '../../includes/footer.php';
 ?>
