@@ -1,13 +1,13 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Notifications
-// /var/www/html/upc_freelance/app/notifications/index.php
+// ../../app/notifications/index.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 requireLogin();
 
@@ -18,7 +18,7 @@ $pdo  = getDB();
 if (isset($_GET['mark_all_read'])) {
     $pdo->prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?')->execute([$user['id']]);
     flash('success', 'Toutes les notifications ont été lues.');
-    redirect('/var/www/html/upc_freelance/app/notifications/index.php');
+    redirect('../../app/notifications/index.php');
 }
 
 // Marquer une comme lue
@@ -31,7 +31,7 @@ if (isset($_GET['read'])) {
         $pdo->prepare('UPDATE notifications SET is_read = 1 WHERE id = ?')->execute([$notifId]);
         if ($notif['link']) redirect($notif['link']);
     }
-    redirect('/var/www/html/upc_freelance/app/notifications/index.php');
+    redirect('../../app/notifications/index.php');
 }
 
 $page    = max(1, (int)($_GET['page'] ?? 1));
@@ -51,7 +51,7 @@ $unreadCount = countUnreadNotifications($user['id']);
 
 $pageTitle = 'Notifications — UPC Freelance';
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <?php renderFlash(); ?>
@@ -134,5 +134,5 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
 
 <?php
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/footer.php';
+require_once '../../includes/footer.php';
 ?>

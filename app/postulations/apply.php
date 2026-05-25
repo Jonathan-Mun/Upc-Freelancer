@@ -1,13 +1,13 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Postuler à un projet
-// /var/www/html/upc_freelance/app/postulations/apply.php
+// ../../app/postulations/apply.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 requireRole('freelancer');
 allowMethods('POST');
@@ -19,7 +19,7 @@ $projectId = (int)($_POST['project_id'] ?? 0);
 
 if (!$projectId) {
     flash('error', 'Projet invalide.');
-    redirect('/var/www/html/upc_freelance/app/projects/list.php');
+    redirect('../../app/projects/list.php');
 }
 
 // Vérifier que le projet existe et est ouvert
@@ -28,7 +28,7 @@ $stmt->execute([$projectId]);
 $project = $stmt->fetch();
 if (!$project) {
     flash('error', 'Ce projet n\'est plus disponible.');
-    redirect('/var/www/html/upc_freelance/app/projects/list.php');
+    redirect('../../app/projects/list.php');
 }
 
 // Vérifier pas déjà postulé
@@ -36,7 +36,7 @@ $stmt = $pdo->prepare('SELECT id FROM postulations WHERE project_id = ? AND free
 $stmt->execute([$projectId, $user['id']]);
 if ($stmt->fetch()) {
     flash('error', 'Vous avez déjà postulé à ce projet.');
-    redirect('/var/www/html/upc_freelance/app/projects/details.php?id=' . $projectId);
+    redirect('../../app/projects/details.php?id=' . $projectId);
 }
 
 $coverLetter   = sanitize($_POST['cover_letter']   ?? '');
@@ -45,7 +45,7 @@ $proposedDays  = (int)($_POST['proposed_days']     ?? 0);
 
 if (empty($coverLetter) || $proposedPrice <= 0) {
     flash('error', 'Veuillez remplir tous les champs obligatoires.');
-    redirect('/var/www/html/upc_freelance/app/projects/details.php?id=' . $projectId);
+    redirect('../../app/projects/details.php?id=' . $projectId);
 }
 
 $pdo->prepare('
@@ -63,4 +63,4 @@ sendNotification(
 );
 
 flash('success', 'Candidature envoyée avec succès !');
-redirect('/var/www/html/upc_freelance/app/postulations/my-applications.php');
+redirect('../../app/postulations/my-applications.php');

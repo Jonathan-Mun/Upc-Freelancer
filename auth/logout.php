@@ -4,9 +4,9 @@
 // /var/www/html/upc_freelance/auth/logout.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
+require_once '../includes/auth.php';
+require_once '../includes/functions.php';
 
 logoutUser();
 flash('success', 'Vous avez été déconnecté avec succès.');
-redirect('/var/www/html/upc_freelance/public/login.php');
+redirect('../public/login.php');
