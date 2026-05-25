@@ -197,6 +197,8 @@ tailwind.config = {
         <?php
         $currentFile = basename($_SERVER['PHP_SELF']);
         $currentDir  = basename(dirname($_SERVER['PHP_SELF']));
+        
+        // ── AJOUT DU PREMIER : Intégration de l'élément 'verification' dans le tableau ──
         $navItems = [
             ['icon'=>'dashboard',              'label'=>'Tableau de bord',  'href'=>$BASE.'/app/dashboard.php',                    'dir'=>'app',          'file'=>'dashboard.php'],
             ['icon'=>'search',                 'label'=>'Trouver un projet','href'=>$BASE.'/app/projects/list.php',                'dir'=>'projects',     'file'=>'list.php'],
@@ -207,6 +209,7 @@ tailwind.config = {
             ['icon'=>'chat',                   'label'=>'Messages',         'href'=>$BASE.'/app/messages/inbox.php',               'dir'=>'messages',     'file'=>'inbox.php'],
             ['icon'=>'account_balance_wallet', 'label'=>'Wallet',           'href'=>$BASE.'/app/wallet/index.php',                 'dir'=>'wallet',       'file'=>'index.php'],
             ['icon'=>'notifications',          'label'=>'Notifications',    'href'=>$BASE.'/app/notifications/index.php',          'dir'=>'notifications','file'=>'index.php'],
+            ['icon'=>'verified_user',          'label'=>'Vérification',     'href'=>$BASE.'/app/verification/index.php',           'dir'=>'verification', 'file'=>'index.php'],
             ['icon'=>'person',                 'label'=>'Mon profil',       'href'=>$BASE.'/app/profile/edit.php',                 'dir'=>'profile',      'file'=>'edit.php'],
         ];
         foreach ($navItems as $nav):

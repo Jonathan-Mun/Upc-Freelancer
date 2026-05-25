@@ -1,14 +1,17 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Admin : Vérifications documents
-// /var/www/html/upc_freelance/admin/verification.php
+// ../../admin/verification.php
 // ============================================================
 
 if (session_status() === PHP_SESSION_NONE) session_start();
 if (empty($_SESSION['admin_id'])) { header('Location: /upc_freelance/admin/login.php'); exit; }
 
-require_once '/var/www/html/upc_freelance/includes/db.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
+require_once '../../includes/db.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/admin_middleware.php';
+
+$admin = currentAdmin();
 
 $pdo = getDB();
 
@@ -134,10 +137,10 @@ foreach(['pending','approved','rejected'] as $s) {
                         <!-- Aperçu doc -->
                         <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-xl mb-4">
                             <span class="material-symbols-outlined text-slate-500">description</span>
-                            <p class="text-sm text-slate-700 flex-1"><?=h($doc['file_path'])?></p>
-                            <a href="/upc_freelance/storage/<?=h($doc['file_path'])?>" target="_blank"
-                               class="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                                <span class="material-symbols-outlined text-base">open_in_new</span> Voir
+                            <p class="text-sm text-slate-700 flex-1 truncate"><?=h(basename($doc['file_path']))?></p>
+                            <a href="/upc_freelance/app/verification/serve.php?id=<?=$doc['id']?>" target="_blank"
+                               class="text-xs text-blue-600 hover:underline flex items-center gap-1 whitespace-nowrap">
+                                <span class="material-symbols-outlined text-base">open_in_new</span> Voir le document
                             </a>
                         </div>
 
