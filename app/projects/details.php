@@ -3,39 +3,45 @@
 // UPC FREELANCE — Détails d'un projet
 // /var/www/html/upc_freelance/app/projects/details.php
 // ============================================================
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 $pdo       = getDB();
 $projectId = (int)($_GET['id'] ?? 0);
-if (!$projectId) { redirect('/var/www/html/upc_freelance/app/projects/list.php'); }
+if (!$projectId) { redirect('../../app/projects/list.php'); }
 
-$project = $pdo->prepare('
+// ── Requête principale ─────────────────────────────────────
+// CORRECTION : u.university n'existe pas dans users.
+// Pour un client, les infos supplémentaires sont dans client_profiles.
+$stmt = $pdo->prepare('
     SELECT p.*, c.name AS category_name, c.icon AS category_icon,
-           u.first_name, u.last_name, u.avatar, u.university,
+           u.first_name, u.last_name, u.avatar,
            cp.company_name, cp.rating AS client_rating, cp.total_reviews
     FROM projects p
     JOIN users u ON u.id = p.client_id
-    LEFT JOIN categories c  ON c.id  = p.category_id
+    LEFT JOIN categories c       ON c.id      = p.category_id
     LEFT JOIN client_profiles cp ON cp.user_id = u.id
     WHERE p.id = ?
 ');
-$project->execute([$projectId]);
-$project = $project->fetch();
+$stmt->execute([$projectId]);
+$project = $stmt->fetch();
 if (!$project) { http_response_code(404); die('Projet introuvable.'); }
 
 // Incrémenter vues
 $pdo->prepare('UPDATE projects SET views_count = views_count + 1 WHERE id = ?')->execute([$projectId]);
 
-// Compétences
+// Compétences requises
 $skills = $project['skills_needed'] ? json_decode($project['skills_needed'], true) : [];
 
-// Postulations (pour le client)
-$user      = currentUser();
-$isOwner   = $user && $user['id'] === $project['client_id'];
+// Postulations
+$user     = currentUser();
+$isOwner  = $user && $user['id'] === $project['client_id'];
 $hasApplied = false;
 
 if ($user && $user['role'] === 'freelancer') {
@@ -46,9 +52,15 @@ if ($user && $user['role'] === 'freelancer') {
 
 $postulations = [];
 if ($isOwner) {
+    // ── Requête postulations ───────────────────────────────
+    // CORRECTION : u.university n'existe pas dans users.
+    // On joint freelancer_profiles pour récupérer university et field_of_study.
     $stmt = $pdo->prepare('
-        SELECT po.*, u.first_name, u.last_name, u.avatar, u.university,
-               fp.title AS freelancer_title, fp.rating, fp.total_reviews
+        SELECT po.*,
+               u.first_name, u.last_name, u.avatar,
+               fp.title AS freelancer_title,
+               fp.university, fp.field_of_study,
+               fp.rating, fp.total_reviews
         FROM postulations po
         JOIN users u ON u.id = po.freelancer_id
         LEFT JOIN freelancer_profiles fp ON fp.user_id = u.id
@@ -59,9 +71,14 @@ if ($isOwner) {
     $postulations = $stmt->fetchAll();
 }
 
+// Nombre de candidatures (sidebar)
+$stmtCount = $pdo->prepare('SELECT COUNT(*) FROM postulations WHERE project_id = ?');
+$stmtCount->execute([$projectId]);
+$postulationCount = (int)$stmtCount->fetchColumn();
+
 $pageTitle = h($project['title']) . ' — UPC Freelance';
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <?php renderFlash(); ?>
@@ -122,7 +139,7 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
             <?php endif; ?>
         </div>
 
-        <!-- Postulations (pour le client) -->
+        <!-- Postulations reçues (client propriétaire) -->
         <?php if ($isOwner && !empty($postulations)): ?>
         <div class="bg-white rounded-2xl border border-slate-100 overflow-hidden custom-shadow-low">
             <div class="flex justify-between items-center p-5 border-b border-slate-100">
@@ -137,15 +154,20 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
             <div class="divide-y divide-slate-50">
                 <?php foreach (array_slice($postulations, 0, 5) as $po): ?>
                 <div class="p-5 flex items-start gap-4">
-                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary flex-shrink-0">
-                        <?= mb_substr($po['first_name'], 0, 1) ?>
+                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary flex-shrink-0 text-sm">
+                        <?= mb_strtoupper(mb_substr($po['first_name'], 0, 1)) ?>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <div class="flex items-center justify-between">
+                        <div class="flex items-center justify-between gap-2">
                             <p class="font-semibold text-primary text-sm"><?= h($po['first_name'] . ' ' . $po['last_name']) ?></p>
-                            <span class="text-sm font-bold text-secondary"><?= money((float)$po['proposed_price']) ?></span>
+                            <span class="text-sm font-bold text-secondary whitespace-nowrap"><?= money((float)$po['proposed_price']) ?></span>
                         </div>
-                        <p class="text-xs text-slate-400 mb-2"><?= h($po['university'] ?? '') ?> · <?= $po['proposed_days'] ? $po['proposed_days'] . ' jours' : '' ?></p>
+                        <!-- CORRECTION : university vient maintenant de fp (freelancer_profiles) -->
+                        <p class="text-xs text-slate-400 mb-2">
+                            <?= $po['university'] ? h($po['university']) : '' ?>
+                            <?= $po['university'] && $po['proposed_days'] ? ' · ' : '' ?>
+                            <?= $po['proposed_days'] ? $po['proposed_days'] . ' jours' : '' ?>
+                        </p>
                         <p class="text-sm text-on-surface-variant line-clamp-2"><?= h(truncate($po['cover_letter'], 120)) ?></p>
                         <?php if ($po['status'] === 'pending'): ?>
                         <div class="flex gap-2 mt-3">
@@ -192,10 +214,10 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                 <input type="hidden" name="project_id" value="<?= $projectId ?>"/>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-primary mb-1.5">Mon tarif (XOF) <span class="text-red-500">*</span></label>
+                        <label class="block text-sm font-medium text-primary mb-1.5">Mon tarif (USD) <span class="text-red-500">*</span></label>
                         <div class="relative">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">CFA</span>
-                            <input type="number" name="proposed_price" required min="0" placeholder="50000"
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">USD</span>
+                            <input type="number" name="proposed_price" required min="0" placeholder="50"
                                    class="w-full pl-12 pr-4 py-3 rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-sm"/>
                         </div>
                     </div>
@@ -222,7 +244,7 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
         <?php endif; ?>
     </div>
 
-    <!-- ── Sidebar infos ─────────────────────────────────── -->
+    <!-- ── Sidebar ────────────────────────────────────────── -->
     <div class="space-y-5">
 
         <!-- Budget & deadline -->
@@ -256,9 +278,7 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                     <span class="text-sm text-on-surface-variant flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-base text-slate-400">group</span> Candidatures
                     </span>
-                    <span class="text-sm font-medium text-primary">
-                        <?= $pdo->prepare('SELECT COUNT(*) FROM postulations WHERE project_id = ?') && ($st = $pdo->prepare('SELECT COUNT(*) FROM postulations WHERE project_id = ?')) && $st->execute([$projectId]) ? (int)$st->fetchColumn() : 0 ?>
-                    </span>
+                    <span class="text-sm font-medium text-primary"><?= $postulationCount ?></span>
                 </div>
             </div>
         </div>
@@ -267,23 +287,27 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
         <div class="bg-white rounded-2xl border border-slate-100 p-5 custom-shadow-low">
             <h3 class="font-semibold text-primary mb-4">À propos du client</h3>
             <div class="flex items-center gap-3 mb-4">
+                <?php if ($project['avatar']): ?>
+                <img src="/upc_freelance/storage/<?= h($project['avatar']) ?>" alt="Avatar"
+                     class="w-12 h-12 rounded-full object-cover flex-shrink-0"/>
+                <?php else: ?>
                 <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-lg flex-shrink-0">
-                    <?= mb_substr($project['first_name'], 0, 1) ?>
+                    <?= mb_strtoupper(mb_substr($project['first_name'], 0, 1)) ?>
                 </div>
+                <?php endif; ?>
                 <div>
                     <p class="font-semibold text-primary text-sm"><?= h($project['first_name'] . ' ' . $project['last_name']) ?></p>
                     <?php if ($project['company_name']): ?>
                     <p class="text-xs text-on-surface-variant"><?= h($project['company_name']) ?></p>
-                    <?php endif; ?>
-                    <?php if ($project['university']): ?>
-                    <p class="text-xs text-slate-400"><?= h($project['university']) ?></p>
                     <?php endif; ?>
                 </div>
             </div>
             <?php if ($project['client_rating']): ?>
             <div class="flex items-center gap-2 mb-3">
                 <?= renderStars((float)$project['client_rating']) ?>
-                <span class="text-xs text-slate-400"><?= number_format($project['client_rating'], 1) ?> (<?= $project['total_reviews'] ?> avis)</span>
+                <span class="text-xs text-slate-400">
+                    <?= number_format($project['client_rating'], 1) ?> (<?= $project['total_reviews'] ?> avis)
+                </span>
             </div>
             <?php endif; ?>
             <a href="/upc_freelance/app/profile/client-profile.php?id=<?= $project['client_id'] ?>"
@@ -292,7 +316,7 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
             </a>
         </div>
 
-        <!-- Actions client -->
+        <!-- Actions client (propriétaire) -->
         <?php if ($isOwner): ?>
         <div class="bg-white rounded-2xl border border-slate-100 p-5 custom-shadow-low space-y-2">
             <a href="/upc_freelance/app/projects/edit.php?id=<?= $projectId ?>"
@@ -306,5 +330,5 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
 
 <?php
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/footer.php';
+require_once '../../includes/footer.php';
 ?>

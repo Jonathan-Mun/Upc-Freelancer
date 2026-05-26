@@ -1,12 +1,13 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Backend Login
-// /var/www/html/upc_freelance/auth/login.php
+// /upc_freelance/auth/login.php
 // ============================================================
 
 require_once '../includes/middleware.php';
 require_once '../includes/auth.php';
 require_once '../includes/functions.php';
+require_once '../includes/db.php';
 
 allowMethods('POST');
 verifyCsrf();
@@ -24,6 +25,30 @@ if (empty($email) || empty($password)) {
     redirect('../public/login.php');
 }
 
+$pdo = getDB();
+
+// ── 1. Vérifier d'abord si c'est un admin ────────────────────
+$stmt = $pdo->prepare('SELECT * FROM admin_users WHERE email = ? LIMIT 1');
+$stmt->execute([$email]);
+$admin = $stmt->fetch();
+
+if ($admin && password_verify($password, $admin['password_hash'])) {
+    // Connexion admin
+    session_regenerate_id(true);
+    $_SESSION['admin_id']    = $admin['id'];
+    $_SESSION['admin_name']  = $admin['name'];
+    $_SESSION['admin_email'] = $admin['email'];
+    $_SESSION['admin_super'] = (bool)$admin['is_super'];
+    $_SESSION['is_admin']    = true;
+
+    // Mettre à jour last_login si la colonne existe
+    // (optionnel — pas dans le schéma actuel)
+
+    flash('success', 'Bienvenue, ' . $admin['name'] . ' !');
+    redirect('../admin/dashboard.php');
+}
+
+// ── 2. Sinon vérifier les utilisateurs normaux ────────────────
 $user = getUserByEmail($email);
 
 if (!$user || !password_verify($password, $user['password_hash'])) {

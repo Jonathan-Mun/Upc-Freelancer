@@ -1,7 +1,7 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Admin Login
-// /var/www/html/upc_freelance/admin/login.php
+// ../../admin/login.php
 // ============================================================
 
 if (session_status() === PHP_SESSION_NONE) session_start();
@@ -10,9 +10,9 @@ if (!empty($_SESSION['admin_id'])) {
     exit;
 }
 
-require_once '/var/www/html/upc_freelance/includes/db.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
+require_once '../includes/db.php';
+require_once '../includes/functions.php';
+require_once '../includes/middleware.php';
 
 $error = '';
 

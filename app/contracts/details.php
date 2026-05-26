@@ -1,20 +1,20 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Détails du contrat + chat
-// /var/www/html/upc_freelance/app/contracts/details.php
+// ../../app/contracts/details.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 requireLogin();
 
 $user       = currentUser();
 $pdo        = getDB();
 $contractId = (int)($_GET['id'] ?? 0);
-if (!$contractId) redirect('/var/www/html/upc_freelance/app/contracts/list.php');
+if (!$contractId) redirect('../../app/contracts/list.php');
 
 $stmt = $pdo->prepare('
     SELECT c.*,
@@ -34,46 +34,48 @@ if (!$contract) { http_response_code(403); die('Accès refusé.'); }
 $isClient     = $user['id'] === $contract['client_id'];
 $isFreelancer = $user['id'] === $contract['freelancer_id'];
 
-// ─── Envoyer un message ───────────────────────────────────────
+// ─── Envoyer un message (AJAX ou form classique) ──────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['send_message'])) {
     verifyCsrf();
     $body = sanitize($_POST['message_body'] ?? '');
     if (!empty($body)) {
         $pdo->prepare('INSERT INTO messages (contract_id, sender_id, body) VALUES (?, ?, ?)')
             ->execute([$contractId, $user['id'], $body]);
-        // Notifier l'autre partie
         $receiverId = $isClient ? $contract['freelancer_id'] : $contract['client_id'];
         sendNotification($receiverId, 'new_message', 'Nouveau message',
             $user['first_name'] . ' vous a envoyé un message.',
             '/upc_freelance/app/contracts/details.php?id=' . $contractId);
+
+        // Réponse JSON si appel AJAX
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['ok' => true]);
+            exit;
+        }
     }
-    redirect('/var/www/html/upc_freelance/app/contracts/details.php?id=' . $contractId . '#chat');
+    redirect('../../app/contracts/details.php?id=' . $contractId . '#chat');
 }
 
-// ─── Valider le travail (libérer le paiement) ─────────────────
+// ─── Valider le travail ───────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_contract'])) {
     verifyCsrf();
     if ($isClient && $contract['status'] === 'active') {
         $pdo->prepare('UPDATE contracts SET status = "completed", completed_at = NOW() WHERE id = ?')->execute([$contractId]);
         $pdo->prepare('UPDATE projects SET status = "completed" WHERE id = ?')->execute([$contract['project_id']]);
 
-        // Libérer le paiement : déduire du locked client et créditer le freelancer
         $pdo->prepare('UPDATE wallets SET locked = locked - ? WHERE user_id = ?')
             ->execute([$contract['amount'], $contract['client_id']]);
-
-        $walletFr = getUserWallet($contract['freelancer_id']);
         $pdo->prepare('UPDATE wallets SET balance = balance + ? WHERE user_id = ?')
             ->execute([$contract['amount'], $contract['freelancer_id']]);
 
         recordTransaction($contract['freelancer_id'], 'payment', $contract['amount'], $contractId,
             'Paiement reçu pour contrat #' . $contractId);
-
         sendNotification($contract['freelancer_id'], 'payment_received', 'Paiement reçu !',
             money((float)$contract['amount']) . ' ont été crédités sur votre wallet.',
             '/upc_freelance/app/wallet/index.php');
 
         flash('success', 'Contrat terminé ! Le paiement a été transféré au freelancer.');
-        redirect('/var/www/html/upc_freelance/app/contracts/details.php?id=' . $contractId);
+        redirect('../../app/contracts/details.php?id=' . $contractId);
     }
 }
 
@@ -81,24 +83,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['complete_contract']))
 $pdo->prepare('UPDATE messages SET is_read = 1 WHERE contract_id = ? AND sender_id != ?')
     ->execute([$contractId, $user['id']]);
 
-// ─── Charger messages ─────────────────────────────────────────
-$messages = $pdo->prepare('
-    SELECT m.*, u.first_name, u.last_name, u.avatar
-    FROM messages m JOIN users u ON u.id = m.sender_id
+// ─── Charger messages initiaux ────────────────────────────────
+$stmtMsgs = $pdo->prepare('
+    SELECT m.id, m.body, m.sender_id, m.created_at, m.is_read,
+           u.first_name, u.last_name, u.avatar
+    FROM messages m
+    JOIN users u ON u.id = m.sender_id
     WHERE m.contract_id = ?
     ORDER BY m.created_at ASC
 ');
-$messages->execute([$contractId]);
-$messages = $messages->fetchAll();
+$stmtMsgs->execute([$contractId]);
+$messages = $stmtMsgs->fetchAll();
+
+// ID du dernier message pour le polling JS
+$lastMsgId = !empty($messages) ? (int)end($messages)['id'] : 0;
 
 $pageTitle = 'Contrat — ' . h($contract['project_title']);
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <?php renderFlash(); ?>
 
-<!-- Retour -->
 <a href="/upc_freelance/app/contracts/list.php" class="inline-flex items-center gap-1 text-sm text-secondary hover:underline mb-6">
     <span class="material-symbols-outlined text-base">arrow_back</span> Mes contrats
 </a>
@@ -108,11 +114,13 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
     <!-- ── Chat ─────────────────────────────────────────── -->
     <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 custom-shadow-low overflow-hidden flex flex-col" style="min-height:600px;" id="chat">
 
-        <!-- Header chat -->
+        <!-- Header -->
         <div class="flex items-center justify-between p-5 border-b border-slate-100">
             <div>
                 <h2 class="font-semibold text-primary"><?= h($contract['project_title']) ?></h2>
-                <p class="text-xs text-on-surface-variant">Chat du contrat · <?= count($messages) ?> message<?= count($messages)>1?'s':'' ?></p>
+                <p class="text-xs text-on-surface-variant" id="msg-count">
+                    Chat du contrat · <?= count($messages) ?> message<?= count($messages)>1?'s':'' ?>
+                </p>
             </div>
             <?php
             $sc = ['active'=>'green','completed'=>'blue','cancelled'=>'red','disputed'=>'amber'][$contract['status']] ?? 'gray';
@@ -124,18 +132,20 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
         <!-- Messages -->
         <div class="flex-1 overflow-y-auto p-5 space-y-4" id="messages-container">
             <?php if (empty($messages)): ?>
-            <div class="text-center py-12">
+            <div class="text-center py-12" id="empty-chat">
                 <span class="material-symbols-outlined text-4xl text-slate-300 block mb-3">chat</span>
                 <p class="text-on-surface-variant text-sm">Aucun message. Démarrez la conversation !</p>
             </div>
             <?php endif; ?>
+
             <?php foreach ($messages as $msg):
                 $isMe = $msg['sender_id'] === $user['id'];
             ?>
-            <div class="flex <?= $isMe ? 'justify-end' : 'justify-start' ?> gap-2">
+            <div class="flex <?= $isMe ? 'justify-end' : 'justify-start' ?> gap-2"
+                 data-msg-id="<?= $msg['id'] ?>">
                 <?php if (!$isMe): ?>
                 <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0 mt-auto">
-                    <?= mb_substr($msg['first_name'], 0, 1) ?>
+                    <?= mb_strtoupper(mb_substr($msg['first_name'], 0, 1)) ?>
                 </div>
                 <?php endif; ?>
                 <div class="max-w-[70%]">
@@ -151,7 +161,7 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                 </div>
                 <?php if ($isMe): ?>
                 <div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0 mt-auto">
-                    <?= mb_substr($user['first_name'], 0, 1) ?>
+                    <?= mb_strtoupper(mb_substr($user['first_name'], 0, 1)) ?>
                 </div>
                 <?php endif; ?>
             </div>
@@ -161,13 +171,13 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
         <!-- Formulaire envoi -->
         <?php if ($contract['status'] === 'active'): ?>
         <div class="border-t border-slate-100 p-4">
-            <form method="POST" class="flex gap-3">
+            <form id="chat-form" class="flex gap-3">
                 <?= csrfField() ?>
                 <input type="hidden" name="send_message" value="1"/>
-                <input type="text" name="message_body" placeholder="Écrire un message..." required
-                       autocomplete="off"
+                <input type="text" name="message_body" id="message-input"
+                       placeholder="Écrire un message..." required autocomplete="off"
                        class="flex-1 px-4 py-2.5 rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-sm transition-all"/>
-                <button type="submit"
+                <button type="submit" id="send-btn"
                         class="bg-primary text-white px-4 py-2.5 rounded-xl hover:opacity-90 transition-opacity active:scale-95">
                     <span class="material-symbols-outlined">send</span>
                 </button>
@@ -180,10 +190,9 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
         <?php endif; ?>
     </div>
 
-    <!-- ── Sidebar contrat ───────────────────────────────── -->
+    <!-- ── Sidebar ───────────────────────────────────────── -->
     <div class="space-y-5">
 
-        <!-- Infos contrat -->
         <div class="bg-white rounded-2xl border border-slate-100 p-5 custom-shadow-low">
             <h3 class="font-semibold text-primary mb-4">Détails du contrat</h3>
             <div class="space-y-3 text-sm">
@@ -209,11 +218,10 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                 <?php endif; ?>
             </div>
 
-            <!-- Libérer paiement (client) -->
             <?php if ($isClient && $contract['status'] === 'active'): ?>
             <div class="mt-5 pt-4 border-t border-slate-100">
                 <p class="text-xs text-on-surface-variant mb-3">
-                    Validez le travail pour libérer le paiement de <strong><?= money((float)$contract['amount']) ?></strong> vers le freelancer.
+                    Validez le travail pour libérer <strong><?= money((float)$contract['amount']) ?></strong> vers le freelancer.
                 </p>
                 <form method="POST" onsubmit="return confirm('Confirmer la fin du contrat et libérer le paiement ?')">
                     <?= csrfField() ?>
@@ -237,20 +245,29 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
         <!-- Participants -->
         <div class="bg-white rounded-2xl border border-slate-100 p-5 custom-shadow-low">
             <h3 class="font-semibold text-primary mb-4">Participants</h3>
-            <!-- Client -->
             <div class="flex items-center gap-3 mb-3">
+                <?php if ($contract['client_avatar']): ?>
+                <img src="/upc_freelance/storage/<?= h($contract['client_avatar']) ?>" alt="Avatar"
+                     class="w-10 h-10 rounded-full object-cover"/>
+                <?php else: ?>
                 <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
-                    <?= mb_substr($contract['client_fname'], 0, 1) ?>
+                    <?= mb_strtoupper(mb_substr($contract['client_fname'], 0, 1)) ?>
                 </div>
+                <?php endif; ?>
                 <div>
                     <p class="text-sm font-semibold text-primary"><?= h($contract['client_fname'] . ' ' . $contract['client_lname']) ?></p>
                     <p class="text-xs text-slate-400">Client <?= $isClient ? '(vous)' : '' ?></p>
                 </div>
             </div>
             <div class="border-t border-slate-100 pt-3 flex items-center gap-3">
+                <?php if ($contract['freelancer_avatar']): ?>
+                <img src="/upc_freelance/storage/<?= h($contract['freelancer_avatar']) ?>" alt="Avatar"
+                     class="w-10 h-10 rounded-full object-cover"/>
+                <?php else: ?>
                 <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center font-bold text-secondary">
-                    <?= mb_substr($contract['freelancer_fname'], 0, 1) ?>
+                    <?= mb_strtoupper(mb_substr($contract['freelancer_fname'], 0, 1)) ?>
                 </div>
+                <?php endif; ?>
                 <div>
                     <p class="text-sm font-semibold text-primary"><?= h($contract['freelancer_fname'] . ' ' . $contract['freelancer_lname']) ?></p>
                     <p class="text-xs text-slate-400">Freelancer <?= $isFreelancer ? '(vous)' : '' ?></p>
@@ -272,12 +289,185 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
 </div>
 
 <script>
-// Auto-scroll chat vers le bas
-const container = document.getElementById('messages-container');
-if (container) container.scrollTop = container.scrollHeight;
+(function () {
+    const contractId  = <?= $contractId ?>;
+    const currentUser = <?= $user['id'] ?>;
+    const csrfToken   = document.querySelector('input[name="csrf_token"]')?.value ?? '';
+    const isActive    = <?= $contract['status'] === 'active' ? 'true' : 'false' ?>;
+
+    const container  = document.getElementById('messages-container');
+    const form       = document.getElementById('chat-form');
+    const input      = document.getElementById('message-input');
+    const countEl    = document.getElementById('msg-count');
+
+    // ── ID du dernier message connu ───────────────────────
+    let lastId = <?= $lastMsgId ?>;
+    let totalCount = <?= count($messages) ?>;
+
+    // ── Auto-scroll vers le bas ───────────────────────────
+    function scrollBottom(force) {
+        if (!container) return;
+        const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 120;
+        if (force || nearBottom) container.scrollTop = container.scrollHeight;
+    }
+    scrollBottom(true);
+
+    // ── Helpers ───────────────────────────────────────────
+    function escHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function timeAgoJs(dateStr) {
+        const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+        if (diff < 60)      return 'À l\'instant';
+        if (diff < 3600)    return Math.floor(diff / 60) + ' min';
+        if (diff < 86400)   return Math.floor(diff / 3600) + ' h';
+        if (diff < 2592000) return Math.floor(diff / 86400) + ' j';
+        return new Date(dateStr).toLocaleDateString('fr-FR');
+    }
+
+    function nl2brJs(s) {
+        return escHtml(s).replace(/\n/g, '<br>');
+    }
+
+    // ── Créer une bulle de message ────────────────────────
+    function buildBubble(msg) {
+        const isMe     = parseInt(msg.sender_id) === currentUser;
+        const initiale = msg.first_name ? msg.first_name.charAt(0).toUpperCase() : '?';
+        const align    = isMe ? 'justify-end' : 'justify-start';
+        const bubble   = isMe
+            ? 'bg-primary text-white rounded-tr-sm'
+            : 'bg-surface-container-low text-on-surface rounded-tl-sm';
+        const timeAlign = isMe ? 'text-right mr-1' : 'ml-1';
+        const avatar    = isMe
+            ? `<div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0 mt-auto">${initiale}</div>`
+            : `<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0 mt-auto">${initiale}</div>`;
+        const senderName = !isMe
+            ? `<p class="text-xs text-slate-400 mb-1 ml-1">${escHtml(msg.first_name)}</p>`
+            : '';
+
+        const div = document.createElement('div');
+        div.className = `flex ${align} gap-2`;
+        div.setAttribute('data-msg-id', msg.id);
+        div.innerHTML = `
+            ${!isMe ? avatar : ''}
+            <div class="max-w-[70%]">
+                ${senderName}
+                <div class="px-4 py-2.5 rounded-2xl ${bubble}">
+                    <p class="text-sm leading-relaxed">${nl2brJs(msg.body)}</p>
+                </div>
+                <p class="text-xs text-slate-400 mt-1 ${timeAlign}">
+                    ${timeAgoJs(msg.created_at)}
+                </p>
+            </div>
+            ${isMe ? avatar : ''}
+        `;
+        return div;
+    }
+
+    // ── Ajouter des messages dans le DOM ──────────────────
+    function appendMessages(msgs) {
+        if (!msgs.length) return;
+
+        // Supprimer le placeholder "aucun message"
+        const empty = document.getElementById('empty-chat');
+        if (empty) empty.remove();
+
+        msgs.forEach(msg => {
+            // Éviter les doublons
+            if (container.querySelector(`[data-msg-id="${msg.id}"]`)) return;
+            container.appendChild(buildBubble(msg));
+            lastId = Math.max(lastId, parseInt(msg.id));
+            totalCount++;
+        });
+
+        // Mettre à jour le compteur
+        if (countEl) {
+            countEl.textContent = `Chat du contrat · ${totalCount} message${totalCount > 1 ? 's' : ''}`;
+        }
+
+        scrollBottom(false);
+    }
+
+    // ── Polling : nouveaux messages ───────────────────────
+    async function pollMessages() {
+        try {
+            const res  = await fetch(
+                `/upc_freelance/app/messages/api-messages.php?contract_id=${contractId}&since=${lastId}`,
+                { credentials: 'same-origin' }
+            );
+            if (!res.ok) return;
+            const msgs = await res.json();
+            appendMessages(msgs);
+        } catch (e) { /* silencieux */ }
+    }
+
+    setInterval(pollMessages, 3000);
+
+    // ── Envoi AJAX ────────────────────────────────────────
+    if (form && isActive) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const body = input.value.trim();
+            if (!body) return;
+
+            const sendBtn = document.getElementById('send-btn');
+            sendBtn.disabled = true;
+            input.disabled   = true;
+
+            // Affichage optimiste immédiat
+            const optimistic = buildBubble({
+                id         : 'tmp_' + Date.now(),
+                body       : body,
+                sender_id  : currentUser,
+                created_at : new Date().toISOString(),
+                first_name : '',
+                last_name  : '',
+                avatar     : null,
+            });
+            optimistic.style.opacity = '0.6';
+            const empty = document.getElementById('empty-chat');
+            if (empty) empty.remove();
+            container.appendChild(optimistic);
+            scrollBottom(true);
+            input.value = '';
+
+            try {
+                const fd = new FormData(form);
+                fd.set('message_body', body);
+                const res = await fetch(
+                    `/upc_freelance/app/contracts/details.php?id=${contractId}`,
+                    {
+                        method      : 'POST',
+                        headers     : { 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials : 'same-origin',
+                        body        : fd,
+                    }
+                );
+
+                if (res.ok) {
+                    // Supprimer le message optimiste — le polling le ramènera avec son vrai id
+                    optimistic.remove();
+                    await pollMessages();
+                } else {
+                    optimistic.style.opacity = '1';
+                    optimistic.style.border  = '1px solid red';
+                }
+            } catch (err) {
+                optimistic.style.opacity = '1';
+            } finally {
+                sendBtn.disabled = false;
+                input.disabled   = false;
+                input.focus();
+            }
+        });
+    }
+})();
 </script>
 
 <?php
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/footer.php';
+require_once '../../includes/footer.php';
 ?>

@@ -1,20 +1,20 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Gérer un contrat (litige, annulation)
-// /var/www/html/upc_freelance/app/contracts/manage.php
+// ../../app/contracts/manage.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 requireLogin();
 
 $user       = currentUser();
 $pdo        = getDB();
 $contractId = (int)($_GET['id'] ?? 0);
-if (!$contractId) redirect('/var/www/html/upc_freelance/app/contracts/list.php');
+if (!$contractId) redirect('../../app/contracts/list.php');
 
 $stmt = $pdo->prepare('
     SELECT c.*, p.title AS project_title
@@ -54,12 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         flash('info', 'Contrat annulé. Le montant a été remis dans votre wallet.');
     }
 
-    redirect('/var/www/html/upc_freelance/app/contracts/details.php?id=' . $contractId);
+    redirect('../../app/contracts/details.php?id=' . $contractId);
 }
 
 $pageTitle = 'Gérer le contrat — UPC Freelance';
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <div class="mb-8">
@@ -144,4 +144,4 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
     <?php endif; ?>
 </div>
 
-<?php $appLayout = true; require_once '/var/www/html/upc_freelance/includes/footer.php'; ?>
+<?php $appLayout = true; require_once '../../includes/footer.php'; ?>

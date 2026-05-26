@@ -1,7 +1,7 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Dashboard principal
-// /var/www/html/upc_freelance/app/dashboard.php
+// ../app/dashboard.php
 // ============================================================
 
 require_once '../includes/middleware.php';
@@ -67,10 +67,45 @@ $appLayout  = true;
 require_once '../includes/header.php';
 ?>
 
-<!-- Flash -->
 <?php renderFlash(); ?>
 
-<!-- Titre -->
+<?php
+$stmt = $pdo->prepare('SELECT status FROM verification_docs WHERE user_id = ? ORDER BY created_at DESC LIMIT 1');
+$stmt->execute([$userId]);
+$lastDocStatus = $stmt->fetchColumn();
+if (!$user['is_verified'] && $lastDocStatus !== 'pending'):
+?>
+<div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-4">
+    <div class="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-white">shield</span>
+    </div>
+    <div class="flex-1">
+        <p class="font-semibold text-amber-800 text-sm">Compte non vérifié</p>
+        <p class="text-xs text-amber-700 mt-0.5">
+            Obtenez le badge vérifié pour <?= $role === 'freelancer' ? 'décrocher plus de missions' : 'accéder aux meilleurs freelancers' ?>.
+        </p>
+    </div>
+    <a href="../app/verification/index.php"
+       class="bg-amber-500 text-white text-xs font-button px-4 py-2 rounded-xl hover:bg-amber-600 transition-colors active:scale-95 whitespace-nowrap">
+         Vérifier →
+    </a>
+</div>
+<?php elseif ($lastDocStatus === 'pending'): ?>
+<div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-4">
+    <div class="w-10 h-10 bg-secondary rounded-xl flex items-center justify-center flex-shrink-0">
+        <span class="material-symbols-outlined text-white">hourglass_top</span>
+    </div>
+    <div class="flex-1">
+        <p class="font-semibold text-primary text-sm">Vérification en cours</p>
+        <p class="text-xs text-on-surface-variant mt-0.5">Votre document est en cours d'examen (24-48h ouvrables).</p>
+    </div>
+    <a href="../app/verification/index.php"
+       class="border border-secondary text-secondary text-xs font-button px-4 py-2 rounded-xl hover:bg-secondary/5 transition-colors whitespace-nowrap">
+         Voir le statut
+    </a>
+</div>
+<?php endif; ?>
+
 <div class="mb-8">
     <h1 class="text-2xl font-bold text-primary">
         Bonjour, <?= h($user['first_name']) ?> 👋
@@ -80,10 +115,8 @@ require_once '../includes/header.php';
     </p>
 </div>
 
-<!-- ── Stat cards ─────────────────────────────────────────── -->
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
 
-    <!-- Wallet -->
     <div class="bg-primary text-white rounded-2xl p-5 custom-shadow-high col-span-2 lg:col-span-1">
         <div class="flex items-center justify-between mb-3">
             <span class="text-blue-200 text-xs font-label-caps uppercase tracking-widest">Mon Wallet</span>
@@ -93,7 +126,7 @@ require_once '../includes/header.php';
         <?php if ($wallet['locked'] > 0): ?>
         <p class="text-xs text-blue-300 mt-1">🔒 <?= money((float)$wallet['locked']) ?> bloqué</p>
         <?php endif; ?>
-        <a href="/upc_freelance/app/wallet/index.php" class="mt-3 inline-block text-xs text-blue-200 hover:text-white">
+        <a href="../app/wallet/index.php" class="mt-3 inline-block text-xs text-blue-200 hover:text-white">
             Gérer →
         </a>
     </div>
@@ -105,7 +138,7 @@ require_once '../includes/header.php';
             <span class="material-symbols-outlined text-secondary text-xl">folder_open</span>
         </div>
         <p class="text-3xl font-bold text-primary"><?= $stats['projets'] ?></p>
-        <a href="/upc_freelance/app/projects/my-projects.php" class="text-xs text-secondary mt-1 inline-block hover:underline">Voir →</a>
+        <a href="../app/projects/my-projects.php" class="text-xs text-secondary mt-1 inline-block hover:underline">Voir →</a>
     </div>
     <div class="bg-white rounded-2xl p-5 border border-slate-100 custom-shadow-low">
         <div class="flex items-center justify-between mb-3">
@@ -113,7 +146,7 @@ require_once '../includes/header.php';
             <span class="material-symbols-outlined text-amber-500 text-xl">inbox</span>
         </div>
         <p class="text-3xl font-bold text-primary"><?= $stats['postulations'] ?></p>
-        <a href="/upc_freelance/app/postulations/received.php" class="text-xs text-secondary mt-1 inline-block hover:underline">Voir →</a>
+        <a href="../app/postulations/received.php" class="text-xs text-secondary mt-1 inline-block hover:underline">Voir →</a>
     </div>
     <div class="bg-white rounded-2xl p-5 border border-slate-100 custom-shadow-low">
         <div class="flex items-center justify-between mb-3">
@@ -121,7 +154,7 @@ require_once '../includes/header.php';
             <span class="material-symbols-outlined text-green-500 text-xl">description</span>
         </div>
         <p class="text-3xl font-bold text-primary"><?= $stats['contrats'] ?></p>
-        <a href="/upc_freelance/app/contracts/list.php" class="text-xs text-secondary mt-1 inline-block hover:underline">Voir →</a>
+        <a href="../app/contracts/list.php" class="text-xs text-secondary mt-1 inline-block hover:underline">Voir →</a>
     </div>
 
     <?php else: ?>
@@ -131,7 +164,7 @@ require_once '../includes/header.php';
             <span class="material-symbols-outlined text-secondary text-xl">send</span>
         </div>
         <p class="text-3xl font-bold text-primary"><?= $stats['candidatures'] ?></p>
-        <a href="/upc_freelance/app/postulations/my-applications.php" class="text-xs text-secondary mt-1 inline-block hover:underline">Voir →</a>
+        <a href="../app/postulations/my-applications.php" class="text-xs text-secondary mt-1 inline-block hover:underline">Voir →</a>
     </div>
     <div class="bg-white rounded-2xl p-5 border border-slate-100 custom-shadow-low">
         <div class="flex items-center justify-between mb-3">
@@ -139,7 +172,7 @@ require_once '../includes/header.php';
             <span class="material-symbols-outlined text-green-500 text-xl">description</span>
         </div>
         <p class="text-3xl font-bold text-primary"><?= $stats['contrats'] ?></p>
-        <a href="/upc_freelance/app/contracts/list.php" class="text-xs text-secondary mt-1 inline-block hover:underline">Voir →</a>
+        <a href="../app/contracts/list.php" class="text-xs text-secondary mt-1 inline-block hover:underline">Voir →</a>
     </div>
     <div class="bg-white rounded-2xl p-5 border border-slate-100 custom-shadow-low">
         <div class="flex items-center justify-between mb-3">
@@ -147,30 +180,28 @@ require_once '../includes/header.php';
             <span class="material-symbols-outlined text-emerald-500 text-xl">payments</span>
         </div>
         <p class="text-2xl font-bold text-primary"><?= money($stats['gains']) ?></p>
-        <a href="/upc_freelance/app/wallet/history.php" class="text-xs text-secondary mt-1 inline-block hover:underline">Historique →</a>
+        <a href="../app/wallet/history.php" class="text-xs text-secondary mt-1 inline-block hover:underline">Historique →</a>
     </div>
     <?php endif; ?>
 </div>
 
-<!-- ── Grid contenu ───────────────────────────────────────── -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-    <!-- Contrats actifs -->
     <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-100 custom-shadow-low overflow-hidden">
         <div class="flex justify-between items-center p-6 border-b border-slate-100">
             <h2 class="font-semibold text-primary">Contrats en cours</h2>
-            <a href="/upc_freelance/app/contracts/list.php" class="text-xs text-secondary hover:underline">Voir tout</a>
+            <a href="../app/contracts/list.php" class="text-xs text-secondary hover:underline">Voir tout</a>
         </div>
         <?php if (empty($activeContracts)): ?>
         <div class="p-12 text-center">
             <span class="material-symbols-outlined text-4xl text-slate-300 block mb-3">description</span>
             <p class="text-on-surface-variant text-sm">Aucun contrat actif pour le moment.</p>
             <?php if ($role === 'client'): ?>
-            <a href="/upc_freelance/app/projects/create.php" class="mt-4 inline-block bg-primary text-white text-sm px-4 py-2 rounded-lg">
+            <a href="../app/projects/create.php" class="mt-4 inline-block bg-primary text-white text-sm px-4 py-2 rounded-lg">
                 Créer un projet
             </a>
             <?php else: ?>
-            <a href="/upc_freelance/app/projects/list.php" class="mt-4 inline-block bg-primary text-white text-sm px-4 py-2 rounded-lg">
+            <a href="../app/projects/list.php" class="mt-4 inline-block bg-primary text-white text-sm px-4 py-2 rounded-lg">
                 Parcourir les projets
             </a>
             <?php endif; ?>
@@ -178,7 +209,7 @@ require_once '../includes/header.php';
         <?php else: ?>
         <div class="divide-y divide-slate-50">
             <?php foreach ($activeContracts as $c): ?>
-            <a href="/upc_freelance/app/contracts/details.php?id=<?= $c['id'] ?>"
+            <a href="../app/contracts/details.php?id=<?= $c['id'] ?>"
                class="flex items-center gap-4 p-4 hover:bg-surface-container-low transition-colors">
                 <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
                     <span class="text-secondary font-bold text-sm"><?= mb_substr($c['first_name'], 0, 1) ?></span>
@@ -197,11 +228,10 @@ require_once '../includes/header.php';
         <?php endif; ?>
     </div>
 
-    <!-- Notifications -->
     <div class="bg-white rounded-2xl border border-slate-100 custom-shadow-low overflow-hidden">
         <div class="flex justify-between items-center p-6 border-b border-slate-100">
             <h2 class="font-semibold text-primary">Notifications</h2>
-            <a href="/upc_freelance/app/notifications/index.php" class="text-xs text-secondary hover:underline">Voir tout</a>
+            <a href="../app/notifications/index.php" class="text-xs text-secondary hover:underline">Voir tout</a>
         </div>
         <?php if (empty($recentNotifs)): ?>
         <div class="p-8 text-center">
@@ -228,18 +258,17 @@ require_once '../includes/header.php';
         <?php endif; ?>
     </div>
 
-    <!-- Projets récents / Marketplace -->
     <div class="lg:col-span-3 bg-white rounded-2xl border border-slate-100 custom-shadow-low overflow-hidden">
         <div class="flex justify-between items-center p-6 border-b border-slate-100">
             <h2 class="font-semibold text-primary">
                 <?= $role === 'client' ? 'Mes projets récents' : 'Projets disponibles' ?>
             </h2>
             <?php if ($role === 'client'): ?>
-            <a href="/upc_freelance/app/projects/create.php" class="inline-flex items-center gap-1 bg-primary text-white text-xs px-3 py-1.5 rounded-lg hover:opacity-90">
+            <a href="../app/projects/create.php" class="inline-flex items-center gap-1 bg-primary text-white text-xs px-3 py-1.5 rounded-lg hover:opacity-90">
                 <span class="material-symbols-outlined text-sm">add</span> Nouveau projet
             </a>
             <?php else: ?>
-            <a href="/upc_freelance/app/projects/list.php" class="text-xs text-secondary hover:underline">Voir tout</a>
+            <a href="../app/projects/list.php" class="text-xs text-secondary hover:underline">Voir tout</a>
             <?php endif; ?>
         </div>
         <?php if (empty($recentProjects)): ?>
@@ -250,7 +279,7 @@ require_once '../includes/header.php';
         <?php else: ?>
         <div class="divide-y divide-slate-50">
             <?php foreach ($recentProjects as $p): ?>
-            <a href="/upc_freelance/app/projects/details.php?id=<?= $p['id'] ?>"
+            <a href="../app/projects/details.php?id=<?= $p['id'] ?>"
                class="flex items-center gap-4 p-4 hover:bg-surface-container-low transition-colors">
                 <div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0">
                     <span class="material-symbols-outlined text-secondary text-xl">work</span>

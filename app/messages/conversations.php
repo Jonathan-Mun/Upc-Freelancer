@@ -1,12 +1,12 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Conversations (alias inbox)
-// /var/www/html/upc_freelance/app/messages/conversations.php
+// ../../app/messages/conversations.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
 
 requireLogin();
-redirect('/var/www/html/upc_freelance/app/messages/inbox.php');
+redirect('../../app/messages/inbox.php');

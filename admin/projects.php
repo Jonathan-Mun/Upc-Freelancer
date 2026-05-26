@@ -1,14 +1,19 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Admin : Gestion des projets
-// /var/www/html/upc_freelance/admin/projects.php
+// ../../admin/projects.php
 // ============================================================
-
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 if (session_status() === PHP_SESSION_NONE) session_start();
 if (empty($_SESSION['admin_id'])) { header('Location: /upc_freelance/admin/login.php'); exit; }
 
-require_once '/var/www/html/upc_freelance/includes/db.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
+require_once '../includes/db.php';
+require_once '../includes/functions.php';
+require_once '../includes/admin_middleware.php';
+
+$admin = currentAdmin();
 
 $pdo = getDB();
 

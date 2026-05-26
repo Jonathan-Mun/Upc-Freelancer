@@ -56,6 +56,14 @@ $reviews = $stmt->fetchAll();
 $currentUser = currentUser();
 $isOwn       = $currentUser && $currentUser['id'] === $userId;
 
+// ── AJOUT DU PREMIER : Récupération du statut du document de vérification ──
+$lastDocStatus = null;
+if ($isOwn) {
+    $stmtDoc = $pdo->prepare('SELECT status FROM verification_docs WHERE user_id = ? ORDER BY created_at DESC LIMIT 1');
+    $stmtDoc->execute([$userId]);
+    $lastDocStatus = $stmtDoc->fetchColumn();
+}
+
 // Calcul taux de complétion du profil
 $profileFields = [
     $freelancer['avatar'],
@@ -194,6 +202,37 @@ require_once '../../includes/header.php';
 <div class="flex gap-0 max-w-6xl mx-auto">
     <!-- ══ CONTENU PRINCIPAL ═══════════════════════════════════ -->
     <main class="flex-1 min-w-0 space-y-8">
+
+        <!-- ── AJOUT DU PREMIER : Bloc d'alerte dynamique de vérification du compte ── -->
+        <?php if ($isOwn): ?>
+            <?php if (!$freelancer['is_verified'] && $lastDocStatus !== 'pending'): ?>
+                <div class="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-4">
+                    <div class="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-white">shield</span>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-amber-800 text-sm">Compte non vérifié</p>
+                        <p class="text-xs text-amber-700 mt-0.5">Obtenez le badge vérifié pour décrocher plus de missions.</p>
+                    </div>
+                    <a href="/upc_freelance/app/verification/index.php" class="bg-amber-500 text-white text-xs font-button px-4 py-2 rounded-xl hover:bg-amber-600 transition-colors active:scale-95 whitespace-nowrap">
+                        Vérifier →
+                    </a>
+                </div>
+            <?php elseif ($lastDocStatus === 'pending'): ?>
+                <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-4">
+                    <div class="w-10 h-10 bg-blue-500 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-white">hourglass_top</span>
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-semibold text-blue-800 text-sm">Vérification en cours</p>
+                        <p class="text-xs text-blue-700 mt-0.5">Votre document est en cours d'examen (24-48h ouvrables).</p>
+                    </div>
+                    <a href="/upc_freelance/app/verification/index.php" class="border border-blue-300 text-blue-700 text-xs font-button px-4 py-2 rounded-xl hover:bg-blue-100/50 transition-colors whitespace-nowrap">
+                        Voir le statut
+                    </a>
+                </div>
+            <?php endif; ?>
+        <?php endif; ?>
 
         <!-- ── SECTION : Identité ──────────────────────────── -->
         <section id="personal">

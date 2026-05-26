@@ -1,13 +1,16 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Candidatures reçues (client)
-// /var/www/html/upc_freelance/app/postulations/received.php
+// ../../app/postulations/received.php
 // ============================================================
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 requireRole('client');
 
@@ -18,7 +21,6 @@ $projectId = (int)($_GET['project_id'] ?? 0);
 // ─── Accept ──────────────────────────────────────────────────
 if (isset($_GET['accept'])) {
     $postId = (int)$_GET['accept'];
-    // Récupérer la postulation
     $stmt = $pdo->prepare('
         SELECT po.*, p.client_id, p.title AS project_title
         FROM postulations po JOIN projects p ON p.id = po.project_id
@@ -28,7 +30,6 @@ if (isset($_GET['accept'])) {
     $post = $stmt->fetch();
 
     if ($post) {
-        // Créer le contrat
         $pdo->prepare('
             INSERT INTO contracts (uuid, project_id, client_id, freelancer_id, postulation_id, amount, start_date, status)
             VALUES (?, ?, ?, ?, ?, ?, CURDATE(), "active")
@@ -38,12 +39,10 @@ if (isset($_GET['accept'])) {
         ]);
         $contractId = (int)$pdo->lastInsertId();
 
-        // Mettre à jour statuts
         $pdo->prepare('UPDATE postulations SET status = "accepted" WHERE id = ?')->execute([$post['id']]);
         $pdo->prepare('UPDATE postulations SET status = "rejected" WHERE project_id = ? AND id != ?')->execute([$post['project_id'], $post['id']]);
         $pdo->prepare('UPDATE projects SET status = "in_progress" WHERE id = ?')->execute([$post['project_id']]);
 
-        // Bloquer le montant dans le wallet client
         $wallet = getUserWallet($user['id']);
         if ((float)$wallet['balance'] >= (float)$post['proposed_price']) {
             $pdo->prepare('UPDATE wallets SET balance = balance - ?, locked = locked + ? WHERE user_id = ?')
@@ -51,20 +50,24 @@ if (isset($_GET['accept'])) {
             recordTransaction($user['id'], 'lock', $post['proposed_price'], $contractId, 'Montant bloqué pour contrat #' . $contractId);
         }
 
-        // Notifications
         sendNotification($post['freelancer_id'], 'application_accepted', 'Candidature acceptée !',
             'Votre candidature pour "' . $post['project_title'] . '" a été acceptée. Un contrat a été créé.',
             '/upc_freelance/app/contracts/details.php?id=' . $contractId);
 
         flash('success', 'Candidature acceptée ! Le contrat a été créé et le montant bloqué.');
     }
-    redirect('/var/www/html/upc_freelance/app/postulations/received.php?project_id=' . ($post['project_id'] ?? $projectId));
+    redirect('../../app/postulations/received.php?project_id=' . ($post['project_id'] ?? $projectId));
 }
 
 // ─── Reject ───────────────────────────────────────────────────
 if (isset($_GET['reject'])) {
     $postId = (int)$_GET['reject'];
-    $stmt   = $pdo->prepare('SELECT po.*, p.client_id, p.title FROM postulations po JOIN projects p ON p.id = po.project_id WHERE po.id = ? AND p.client_id = ?');
+    $stmt   = $pdo->prepare('
+        SELECT po.*, p.client_id, p.title
+        FROM postulations po
+        JOIN projects p ON p.id = po.project_id
+        WHERE po.id = ? AND p.client_id = ?
+    ');
     $stmt->execute([$postId, $user['id']]);
     $post = $stmt->fetch();
     if ($post && $post['status'] === 'pending') {
@@ -74,7 +77,7 @@ if (isset($_GET['reject'])) {
             '/upc_freelance/app/postulations/my-applications.php');
         flash('info', 'Candidature refusée.');
     }
-    redirect('/var/www/html/upc_freelance/app/postulations/received.php?project_id=' . ($post['project_id'] ?? $projectId));
+    redirect('../../app/postulations/received.php?project_id=' . ($post['project_id'] ?? $projectId));
 }
 
 // ─── Lister ───────────────────────────────────────────────────
@@ -85,10 +88,12 @@ if ($projectId) {
     $params[]      = $projectId;
 }
 
+// CORRECTION : u.university supprimé — on lit fp.university depuis freelancer_profiles
 $stmt = $pdo->prepare("
     SELECT po.*, p.title AS project_title, p.id AS proj_id,
-           u.first_name, u.last_name, u.avatar, u.university,
-           fp.title AS freelancer_title, fp.rating, fp.total_reviews, fp.skills
+           u.first_name, u.last_name, u.avatar,
+           fp.title AS freelancer_title, fp.rating, fp.total_reviews,
+           fp.skills, fp.university, fp.field_of_study
     FROM postulations po
     JOIN projects p ON p.id = po.project_id
     JOIN users u ON u.id = po.freelancer_id
@@ -106,7 +111,7 @@ $myProjects = $myProjects->fetchAll();
 
 $pageTitle = 'Candidatures reçues — UPC Freelance';
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <?php renderFlash(); ?>
@@ -116,7 +121,6 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
         <h1 class="text-2xl font-bold text-primary">Candidatures reçues</h1>
         <p class="text-on-surface-variant text-sm mt-1"><?= count($postulations) ?> candidature<?= count($postulations) > 1 ? 's' : '' ?></p>
     </div>
-    <!-- Filtre projet -->
     <form method="GET">
         <select name="project_id" onchange="this.form.submit()"
                 class="px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-secondary outline-none">
@@ -139,15 +143,23 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
 <?php else: ?>
 <div class="grid grid-cols-1 gap-4">
     <?php foreach ($postulations as $po):
-        $sc = ['pending'=>'amber','accepted'=>'green','rejected'=>'red'][$po['status']] ?? 'gray';
-        $sl = ['pending'=>'En attente','accepted'=>'Acceptée','rejected'=>'Refusée'][$po['status']] ?? $po['status'];
+        $sc     = ['pending'=>'amber','accepted'=>'green','rejected'=>'red'][$po['status']] ?? 'gray';
+        $sl     = ['pending'=>'En attente','accepted'=>'Acceptée','rejected'=>'Refusée'][$po['status']] ?? $po['status'];
         $skills = $po['skills'] ? json_decode($po['skills'], true) : [];
     ?>
     <div class="bg-white rounded-2xl border border-slate-100 p-6 custom-shadow-low">
         <div class="flex items-start gap-4">
+
             <!-- Avatar -->
-            <div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary text-xl flex-shrink-0">
-                <?= mb_substr($po['first_name'], 0, 1) ?>
+            <div class="flex-shrink-0">
+                <?php if ($po['avatar']): ?>
+                <img src="/upc_freelance/storage/<?= h($po['avatar']) ?>" alt="Avatar"
+                     class="w-14 h-14 rounded-xl object-cover"/>
+                <?php else: ?>
+                <div class="w-14 h-14 rounded-xl bg-primary/10 flex items-center justify-center font-bold text-primary text-xl">
+                    <?= mb_strtoupper(mb_substr($po['first_name'], 0, 1)) ?>
+                </div>
+                <?php endif; ?>
             </div>
 
             <div class="flex-1 min-w-0">
@@ -160,9 +172,12 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                         <?php if ($po['freelancer_title']): ?>
                         <p class="text-xs text-on-surface-variant"><?= h($po['freelancer_title']) ?></p>
                         <?php endif; ?>
+                        <!-- CORRECTION : university vient de fp (freelancer_profiles) -->
                         <?php if ($po['university']): ?>
                         <p class="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                            <span class="material-symbols-outlined text-sm">school</span><?= h($po['university']) ?>
+                            <span class="material-symbols-outlined text-sm">school</span>
+                            <?= h($po['university']) ?>
+                            <?= $po['field_of_study'] ? ' · ' . h($po['field_of_study']) : '' ?>
                         </p>
                         <?php endif; ?>
                     </div>
@@ -178,7 +193,6 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                 </div>
                 <?php endif; ?>
 
-                <!-- Skills -->
                 <?php if (!empty($skills)): ?>
                 <div class="flex flex-wrap gap-1.5 mb-3">
                     <?php foreach (array_slice($skills, 0, 5) as $s): ?>
@@ -187,7 +201,6 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                 </div>
                 <?php endif; ?>
 
-                <!-- Proposition + message -->
                 <div class="grid grid-cols-3 gap-4 mb-3 text-sm">
                     <div>
                         <p class="text-xs text-slate-400">Proposition</p>
@@ -209,9 +222,8 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                     <?= h($po['cover_letter']) ?>
                 </blockquote>
 
-                <!-- Actions -->
                 <?php if ($po['status'] === 'pending'): ?>
-                <div class="flex gap-3">
+                <div class="flex gap-3 flex-wrap">
                     <a href="?project_id=<?= $po['proj_id'] ?>&accept=<?= $po['id'] ?>"
                        class="inline-flex items-center gap-1.5 bg-green-500 text-white text-sm px-4 py-2 rounded-xl hover:bg-green-600 transition-colors active:scale-95">
                         <span class="material-symbols-outlined text-base">check</span> Accepter
@@ -227,7 +239,8 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
                     </a>
                 </div>
                 <?php elseif ($po['status'] === 'accepted'): ?>
-                <a href="/upc_freelance/app/contracts/list.php" class="inline-flex items-center gap-1.5 text-sm text-green-600 font-medium hover:underline">
+                <a href="/upc_freelance/app/contracts/list.php"
+                   class="inline-flex items-center gap-1.5 text-sm text-green-600 font-medium hover:underline">
                     <span class="material-symbols-outlined text-base">description</span> Voir le contrat
                 </a>
                 <?php endif; ?>
@@ -240,5 +253,5 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
 
 <?php
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/footer.php';
+require_once '../../includes/footer.php';
 ?>

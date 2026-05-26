@@ -4,14 +4,14 @@
 // /var/www/html/upc_freelance/app/profile/client-profile.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
-require_once '/var/www/html/upc_freelance/includes/db.php';
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/functions.php';
+require_once '../../includes/db.php';
 
 $pdo    = getDB();
 $userId = (int)($_GET['id'] ?? 0);
-if (!$userId) redirect('/var/www/html/upc_freelance/app/projects/list.php');
+if (!$userId) redirect('../../app/projects/list.php');
 
 $stmt = $pdo->prepare('
     SELECT u.*, cp.company_name, cp.website, cp.rating, cp.total_reviews, cp.total_spent
@@ -53,7 +53,7 @@ $isOwn       = $currentUser && $currentUser['id'] === $userId;
 
 $pageTitle = h($client['first_name'] . ' ' . $client['last_name']) . ' — UPC Freelance';
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../../includes/header.php';
 ?>
 
 <!-- En-tête -->
@@ -232,5 +232,5 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
 
 <?php
 $appLayout = true;
-require_once '/var/www/html/upc_freelance/includes/footer.php';
+require_once '../../includes/footer.php';
 ?>
