@@ -222,13 +222,15 @@ tailwind.config = {
                 <?= $nav['icon'] ?>
             </span>
             <span><?= $nav['label'] ?></span>
-            <?php if ($nav['icon'] === 'notifications' && $notifCount > 0): ?>
-            <span class="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+            <?php if ($nav['icon'] === 'notifications'): ?>
+            <span id="badge-notif-sidebar"
+                  class="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 items-center justify-center <?= $notifCount > 0 ? 'flex' : 'hidden' ?>">
                 <?= $notifCount > 9 ? '9+' : $notifCount ?>
             </span>
             <?php endif; ?>
-            <?php if ($nav['icon'] === 'chat' && $msgCount > 0): ?>
-            <span class="ml-auto bg-secondary text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+            <?php if ($nav['icon'] === 'chat'): ?>
+            <span id="badge-msg-sidebar"
+                  class="ml-auto bg-secondary text-white text-[10px] font-bold rounded-full w-5 h-5 items-center justify-center <?= $msgCount > 0 ? 'flex' : 'hidden' ?>">
                 <?= $msgCount > 9 ? '9+' : $msgCount ?>
             </span>
             <?php endif; ?>
@@ -326,13 +328,15 @@ tailwind.config = {
                     <?= $nav['icon'] ?>
                 </span>
                 <span><?= $nav['label'] ?></span>
-                <?php if ($nav['icon'] === 'notifications' && $notifCount > 0): ?>
-                <span class="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                <?php if ($nav['icon'] === 'notifications'): ?>
+                <span id="badge-notif-drawer"
+                      class="ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 items-center justify-center <?= $notifCount > 0 ? 'flex' : 'hidden' ?>">
                     <?= $notifCount > 9 ? '9+' : $notifCount ?>
                 </span>
                 <?php endif; ?>
-                <?php if ($nav['icon'] === 'chat' && $msgCount > 0): ?>
-                <span class="ml-auto bg-secondary text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                <?php if ($nav['icon'] === 'chat'): ?>
+                <span id="badge-msg-drawer"
+                      class="ml-auto bg-secondary text-white text-[10px] font-bold rounded-full w-5 h-5 items-center justify-center <?= $msgCount > 0 ? 'flex' : 'hidden' ?>">
                     <?= $msgCount > 9 ? '9+' : $msgCount ?>
                 </span>
                 <?php endif; ?>
@@ -368,19 +372,17 @@ tailwind.config = {
         <div class="flex items-center gap-2">
             <a href="<?= $BASE ?>/app/messages/inbox.php" class="relative p-2 rounded-lg hover:bg-slate-100 transition-colors">
                 <span class="material-symbols-outlined text-slate-600 text-xl">chat</span>
-                <?php if ($msgCount > 0): ?>
-                <span class="absolute top-1 right-1 bg-secondary text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                <span id="badge-msg-topbar"
+                      class="absolute top-1 right-1 bg-secondary text-white text-[9px] rounded-full w-4 h-4 items-center justify-center font-bold <?= $msgCount > 0 ? 'flex' : 'hidden' ?>">
                     <?= $msgCount > 9 ? '9+' : $msgCount ?>
                 </span>
-                <?php endif; ?>
             </a>
             <a href="<?= $BASE ?>/app/notifications/index.php" class="relative p-2 rounded-lg hover:bg-slate-100 transition-colors">
                 <span class="material-symbols-outlined text-slate-600 text-xl">notifications</span>
-                <?php if ($notifCount > 0): ?>
-                <span class="absolute top-1 right-1 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 flex items-center justify-center font-bold">
+                <span id="badge-notif-topbar"
+                      class="absolute top-1 right-1 bg-red-500 text-white text-[9px] rounded-full w-4 h-4 items-center justify-center font-bold <?= $notifCount > 0 ? 'flex' : 'hidden' ?>">
                     <?= $notifCount > 9 ? '9+' : $notifCount ?>
                 </span>
-                <?php endif; ?>
             </a>
         </div>
     </header>
@@ -404,6 +406,187 @@ tailwind.config = {
 
     // Fermer avec Escape
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawer(); });
+})();
+
+// ── Notification + Message polling ───────────────────────
+(function () {
+    const BASE           = '/upc_freelance';
+    const NOTIF_API      = BASE + '/app/notifications/api-notifications.php';
+    const MSG_API        = BASE + '/app/messages/api-conversations.php';
+    const INTERVAL       = 500; // 1 secondes
+    const IS_NOTIF_PAGE  = window.location.pathname.includes('/notifications/');
+    const IS_INBOX_PAGE  = window.location.pathname.includes('/messages/');
+
+    // ── Badges ────────────────────────────────────────────
+    const NOTIF_BADGES = ['badge-notif-sidebar', 'badge-notif-drawer', 'badge-notif-topbar'];
+    const MSG_BADGES   = ['badge-msg-sidebar',   'badge-msg-drawer',   'badge-msg-topbar'];
+
+    function formatCount(n) { return n > 9 ? '9+' : String(n); }
+
+    function updateBadges(ids, count) {
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (count > 0) {
+                el.textContent = formatCount(count);
+                el.classList.remove('hidden');
+                el.classList.add('flex');
+            } else {
+                el.classList.add('hidden');
+                el.classList.remove('flex');
+            }
+        });
+    }
+
+    function pulseBadges(ids) {
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (!el || el.classList.contains('hidden')) return;
+            el.style.transform  = 'scale(1.35)';
+            el.style.transition = 'transform 0.15s ease';
+            setTimeout(() => { el.style.transform = 'scale(1)'; }, 200);
+        });
+    }
+
+    // ── Toast ─────────────────────────────────────────────
+    function showToast(icon, title, body, link, color) {
+        const toast = document.createElement('div');
+        toast.className = 'upc-toast';
+
+        // Décaler les toasts existants
+        document.querySelectorAll('.upc-toast').forEach((t, i) => {
+            t.style.bottom = (24 + (i + 1) * 78) + 'px';
+        });
+
+        toast.style.cssText = `
+            position:fixed; bottom:24px; right:24px; z-index:9999;
+            background:#002045; color:#fff;
+            padding:14px 18px; border-radius:14px;
+            box-shadow:0 8px 28px rgba(0,32,69,.35);
+            display:flex; align-items:flex-start; gap:12px;
+            max-width:320px; width:calc(100vw - 48px);
+            animation:slideInToast .25s ease;
+            cursor:${link ? 'pointer' : 'default'};
+            border-left: 3px solid ${color};
+        `;
+        toast.innerHTML = `
+            <span style="font-size:20px;line-height:1;flex-shrink:0;margin-top:1px">${icon}</span>
+            <div style="flex:1;min-width:0">
+                <p style="font-weight:700;font-size:13px;margin:0 0 2px">${title}</p>
+                ${body ? `<p style="font-size:12px;opacity:.75;margin:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${body}</p>` : ''}
+            </div>
+            <button onclick="this.parentElement.remove()"
+                    style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:18px;line-height:1;flex-shrink:0;margin-top:-2px">×</button>
+        `;
+        if (link) toast.addEventListener('click', e => { if (e.target.tagName !== 'BUTTON') window.location.href = link; });
+        document.body.appendChild(toast);
+        setTimeout(() => {
+            toast.style.animation = 'slideOutToast .2s ease forwards';
+            setTimeout(() => toast.remove(), 200);
+        }, 5000);
+    }
+
+    // Keyframes (injectés une seule fois)
+    if (!document.getElementById('upc-toast-styles')) {
+        const s = document.createElement('style');
+        s.id = 'upc-toast-styles';
+        s.textContent = `
+            @keyframes slideInToast {
+                from { transform:translateX(110%); opacity:0; }
+                to   { transform:translateX(0);    opacity:1; }
+            }
+            @keyframes slideOutToast {
+                from { transform:translateX(0);    opacity:1; }
+                to   { transform:translateX(110%); opacity:0; }
+            }
+        `;
+        document.head.appendChild(s);
+    }
+
+    // ── Icônes notifs ─────────────────────────────────────
+    const NOTIF_ICONS = {
+        new_application:      '📥',
+        application_accepted: '✅',
+        application_rejected: '❌',
+        new_message:          '💬',
+        payment_received:     '💰',
+        deposit_success:      '➕',
+        contract_created:     '📄',
+        welcome:              '🎉',
+    };
+
+    // ── État ──────────────────────────────────────────────
+    let lastNotifId  = 0;
+    let prevMsgCount = <?= (int)($msgCount ?? 0) ?>;
+
+    // ── Poll messages — badge uniquement, pas de toast ────
+    async function pollMsgs() {
+        try {
+            const res   = await fetch(MSG_API, { credentials: 'same-origin' });
+            if (!res.ok) return;
+            const convs = await res.json();
+
+            const total = convs.reduce((acc, c) => acc + (parseInt(c.unread) || 0), 0);
+            updateBadges(MSG_BADGES, total);
+            if (prevMsgCount < total) pulseBadges(MSG_BADGES);
+            prevMsgCount = total;
+
+            if (IS_INBOX_PAGE && window.UPCInboxPage) window.UPCInboxPage.refresh(convs, total);
+        } catch (e) {}
+    }
+
+    // ── Poll notifications — badge + toast pour tout ──────
+    async function pollNotifs() {
+        try {
+            const res  = await fetch(NOTIF_API + '?action=poll&since=' + lastNotifId + '&limit=5', { credentials: 'same-origin' });
+            if (!res.ok) return;
+            const data = await res.json();
+
+            const count  = data.unread ?? 0;
+            const notifs = data.notifications ?? [];
+
+            updateBadges(NOTIF_BADGES, count);
+
+            if (lastNotifId > 0 && notifs.length > 0) {
+                pulseBadges(NOTIF_BADGES);
+                notifs.slice(0, 3).forEach(n =>
+                    showToast(NOTIF_ICONS[n.type] || '🔔', n.title, n.body, n.link, '#66affe')
+                );
+                if (IS_NOTIF_PAGE && window.UPCNotifPage) window.UPCNotifPage.refresh(notifs, count);
+            }
+
+            if (notifs.length > 0) lastNotifId = Math.max(...notifs.map(n => n.id));
+        } catch (e) {}
+    }
+
+    // ── Init ──────────────────────────────────────────────
+    async function init() {
+        try {
+            // Notifs : récupère le dernier id sans toast
+            const r1   = await fetch(NOTIF_API + '?action=poll&since=0&limit=1', { credentials: 'same-origin' });
+            const d1   = await r1.json();
+            const n1   = d1.notifications ?? [];
+            if (n1.length > 0) lastNotifId = n1[0].id;
+            updateBadges(NOTIF_BADGES, d1.unread ?? 0);
+
+            // Messages : init du compteur
+            const r2    = await fetch(MSG_API, { credentials: 'same-origin' });
+            const convs = await r2.json();
+            prevMsgCount = convs.reduce((acc, c) => acc + (parseInt(c.unread) || 0), 0);
+            updateBadges(MSG_BADGES, prevMsgCount);
+        } catch (e) {}
+    }
+
+    init().then(() => {
+        setInterval(async () => {
+            await pollMsgs();   // messages en premier
+            await pollNotifs(); // notifs ensuite — new_message déjà filtrés
+        }, INTERVAL);
+    });
+
+    // Exposer
+    window.UPCNotifBadge = { updateBadges: (c) => updateBadges(NOTIF_BADGES, c) };
+    window.UPCMsgBadge   = { updateBadges: (c) => updateBadges(MSG_BADGES, c) };
 })();
 </script>
 

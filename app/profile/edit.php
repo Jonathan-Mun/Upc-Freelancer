@@ -17,11 +17,11 @@ $pdo  = getDB();
 if ($user['role'] === 'freelancer') {
     $stmt = $pdo->prepare('SELECT * FROM freelancer_profiles WHERE user_id = ?');
     $stmt->execute([$user['id']]);
-    $profile = $stmt->fetch();
+    $profile = $stmt->fetch() ?: [];
 } else {
     $stmt = $pdo->prepare('SELECT * FROM client_profiles WHERE user_id = ?');
     $stmt->execute([$user['id']]);
-    $profile = $stmt->fetch();
+    $profile = $stmt->fetch() ?: [];
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
