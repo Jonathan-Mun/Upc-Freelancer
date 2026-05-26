@@ -3,12 +3,15 @@
 // UPC FREELANCE — Admin Dashboard
 // ../../admin/dashboard.php
 // ============================================================
-
-require_once '../../includes/middleware.php';
-require_once '../../includes/auth.php';
-require_once '../../includes/functions.php';
-require_once '../../includes/db.php';
-
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+require_once '../includes/middleware.php';
+require_once '../includes/auth.php';
+require_once '../includes/functions.php';
+require_once '../includes/db.php';
+require_once '../includes/admin_middleware.php';
+$admin = currentAdmin();
 // Auth admin via session séparée
 if (session_status() === PHP_SESSION_NONE) session_start();
 if (empty($_SESSION['admin_id'])) {

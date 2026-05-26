@@ -10,9 +10,9 @@ if (!empty($_SESSION['admin_id'])) {
     exit;
 }
 
-require_once '../../includes/db.php';
-require_once '../../includes/functions.php';
-require_once '../../includes/middleware.php';
+require_once '../includes/db.php';
+require_once '../includes/functions.php';
+require_once '../includes/middleware.php';
 
 $error = '';
 

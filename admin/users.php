@@ -9,10 +9,10 @@ if (empty($_SESSION['admin_id'])) {
     header('Location: /upc_freelance/admin/login.php'); exit;
 }
 
-require_once '../../includes/db.php';
-require_once '../../includes/functions.php';
-require_once '../../includes/middleware.php';
-require_once '../../includes/admin_middleware.php';
+require_once '../includes/db.php';
+require_once '../includes/functions.php';
+require_once '../includes/middleware.php';
+require_once '../includes/admin_middleware.php';
 
 $admin = currentAdmin();
 

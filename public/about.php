@@ -4,12 +4,12 @@
 // /var/www/html/upc_freelance/public/about.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
+require_once '../includes/middleware.php';
+require_once '../includes/auth.php';
+require_once '../includes/functions.php';
 
 $pageTitle = 'À propos — UPC Freelance';
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../includes/header.php';
 ?>
 
 <section class="py-20 bg-white">
@@ -77,4 +77,4 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
     </div>
 </section>
 
-<?php require_once '/var/www/html/upc_freelance/includes/footer.php'; ?>
+<?php require_once '../includes/footer.php'; ?>

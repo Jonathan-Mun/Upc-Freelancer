@@ -4,12 +4,12 @@
 // /var/www/html/upc_freelance/public/how-it-works.php
 // ============================================================
 
-require_once '/var/www/html/upc_freelance/includes/middleware.php';
-require_once '/var/www/html/upc_freelance/includes/auth.php';
-require_once '/var/www/html/upc_freelance/includes/functions.php';
+require_once '../includes/middleware.php';
+require_once '../includes/auth.php';
+require_once '../includes/functions.php';
 
 $pageTitle = 'Comment ça marche — UPC Freelance';
-require_once '/var/www/html/upc_freelance/includes/header.php';
+require_once '../includes/header.php';
 ?>
 
 <!-- Hero -->
@@ -124,4 +124,4 @@ require_once '/var/www/html/upc_freelance/includes/header.php';
     </div>
 </section>
 
-<?php require_once '/var/www/html/upc_freelance/includes/footer.php'; ?>
+<?php require_once '../includes/footer.php'; ?>
