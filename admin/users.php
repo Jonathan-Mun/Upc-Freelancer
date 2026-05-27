@@ -158,9 +158,7 @@ $totalPages = (int)ceil($total / $perPage);
                         <tr class="hover:bg-slate-50 transition-colors">
                             <td class="px-5 py-3">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-600 flex-shrink-0">
-                                        <?= mb_substr($u['first_name'], 0, 1) ?>
-                                    </div>
+                                    <?= renderAvatar($u['avatar'] ?? null, $u['first_name'], $u['last_name'], (bool)($u['is_verified'] ?? false), 'w-9 h-9', 'rounded-full') ?>
                                     <div>
                                         <p class="font-medium text-slate-900"><?= h($u['first_name'] . ' ' . $u['last_name']) ?></p>
                                         <p class="text-xs text-slate-400"><?= h($u['email']) ?></p>

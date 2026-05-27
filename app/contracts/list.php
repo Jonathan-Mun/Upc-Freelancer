@@ -27,7 +27,9 @@ $stmt = $pdo->prepare('
     SELECT c.*,
            p.title AS project_title,
            cl.first_name AS client_fname, cl.last_name AS client_lname,
+           cl.avatar AS client_avatar, cl.is_verified AS client_verified,
            fr.first_name AS freelancer_fname, fr.last_name AS freelancer_lname,
+           fr.avatar AS freelancer_avatar, fr.is_verified AS freelancer_verified,
            (SELECT COUNT(*) FROM messages m WHERE m.contract_id = c.id AND m.sender_id != ? AND m.is_read = 0) AS unread_msgs
     FROM contracts c
     JOIN projects p   ON p.id  = c.project_id
@@ -76,17 +78,20 @@ require_once '../../includes/header.php';
     <?php foreach ($contracts as $c):
         $sc = ['active'=>'green','completed'=>'blue','cancelled'=>'red','disputed'=>'amber'][$c['status']] ?? 'gray';
         $sl = ['active'=>'Actif','completed'=>'Terminé','cancelled'=>'Annulé','disputed'=>'Litige'][$c['status']] ?? $c['status'];
-        $partner = $user['id'] === $c['client_id']
+        $isClientView   = $user['id'] === $c['client_id'];
+        $partner        = $isClientView
             ? $c['freelancer_fname'] . ' ' . $c['freelancer_lname']
             : $c['client_fname'] . ' ' . $c['client_lname'];
-        $partnerRole = $user['id'] === $c['client_id'] ? 'Freelancer' : 'Client';
+        $partnerFname   = $isClientView ? $c['freelancer_fname'] : $c['client_fname'];
+        $partnerLname   = $isClientView ? $c['freelancer_lname'] : $c['client_lname'];
+        $partnerAvatar  = $isClientView ? ($c['freelancer_avatar'] ?? null) : ($c['client_avatar'] ?? null);
+        $partnerVerif   = $isClientView ? (bool)($c['freelancer_verified'] ?? false) : (bool)($c['client_verified'] ?? false);
+        $partnerRole    = $isClientView ? 'Freelancer' : 'Client';
     ?>
     <a href="/upc_freelance/app/contracts/details.php?id=<?= $c['id'] ?>"
        class="group block bg-white rounded-2xl border border-slate-100 hover:border-secondary/40 hover:shadow-md transition-all p-5 custom-shadow-low">
         <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-secondary">description</span>
-            </div>
+            <?= renderAvatar($partnerAvatar, $partnerFname, $partnerLname, $partnerVerif, 'w-12 h-12', 'rounded-xl') ?>
             <div class="flex-1 min-w-0">
                 <div class="flex items-start justify-between gap-2 mb-1">
                     <h3 class="font-semibold text-primary group-hover:text-secondary transition-colors leading-snug">

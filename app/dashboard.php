@@ -47,7 +47,7 @@ if ($role === 'client') {
 
 // Contrats actifs
 $activeContracts = $pdo->prepare('
-    SELECT ct.*, p.title AS project_title, u.first_name, u.last_name
+    SELECT ct.*, p.title AS project_title, u.first_name, u.last_name, u.avatar, u.is_verified
     FROM contracts ct
     JOIN projects p ON p.id = ct.project_id
     JOIN users u ON u.id = IF(? = ct.client_id, ct.freelancer_id, ct.client_id)
@@ -212,7 +212,7 @@ if (!$user['is_verified'] && $lastDocStatus !== 'pending'):
             <a href="../app/contracts/details.php?id=<?= $c['id'] ?>"
                class="flex items-center gap-4 p-4 hover:bg-surface-container-low transition-colors">
                 <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center flex-shrink-0">
-                    <span class="text-secondary font-bold text-sm"><?= mb_substr($c['first_name'], 0, 1) ?></span>
+                    <?= renderAvatar($c['avatar'] ?? null, $c['first_name'], $c['last_name'], (bool)($c['is_verified'] ?? false), 'w-8 h-8', 'rounded-full') ?>
                 </div>
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-primary truncate"><?= h($c['project_title']) ?></p>

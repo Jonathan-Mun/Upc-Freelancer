@@ -246,28 +246,14 @@ require_once '../../includes/header.php';
         <div class="bg-white rounded-2xl border border-slate-100 p-5 custom-shadow-low">
             <h3 class="font-semibold text-primary mb-4">Participants</h3>
             <div class="flex items-center gap-3 mb-3">
-                <?php if ($contract['client_avatar']): ?>
-                <img src="/upc_freelance/storage/<?= h($contract['client_avatar']) ?>" alt="Avatar"
-                     class="w-10 h-10 rounded-full object-cover"/>
-                <?php else: ?>
-                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary">
-                    <?= mb_strtoupper(mb_substr($contract['client_fname'], 0, 1)) ?>
-                </div>
-                <?php endif; ?>
+                <?= renderAvatar($contract['client_avatar'] ?? null, $contract['client_fname'], $contract['client_lname'], false, 'w-10 h-10', 'rounded-full') ?>
                 <div>
                     <p class="text-sm font-semibold text-primary"><?= h($contract['client_fname'] . ' ' . $contract['client_lname']) ?></p>
                     <p class="text-xs text-slate-400">Client <?= $isClient ? '(vous)' : '' ?></p>
                 </div>
             </div>
             <div class="border-t border-slate-100 pt-3 flex items-center gap-3">
-                <?php if ($contract['freelancer_avatar']): ?>
-                <img src="/upc_freelance/storage/<?= h($contract['freelancer_avatar']) ?>" alt="Avatar"
-                     class="w-10 h-10 rounded-full object-cover"/>
-                <?php else: ?>
-                <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center font-bold text-secondary">
-                    <?= mb_strtoupper(mb_substr($contract['freelancer_fname'], 0, 1)) ?>
-                </div>
-                <?php endif; ?>
+                <?= renderAvatar($contract['freelancer_avatar'] ?? null, $contract['freelancer_fname'], $contract['freelancer_lname'], false, 'w-10 h-10', 'rounded-full') ?>
                 <div>
                     <p class="text-sm font-semibold text-primary"><?= h($contract['freelancer_fname'] . ' ' . $contract['freelancer_lname']) ?></p>
                     <p class="text-xs text-slate-400">Freelancer <?= $isFreelancer ? '(vous)' : '' ?></p>

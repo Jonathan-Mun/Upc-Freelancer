@@ -20,7 +20,8 @@ $stmt = $pdo->prepare('
            p.title AS project_title,
            CASE WHEN ct.client_id = ? THEN fr.first_name ELSE cl.first_name END AS partner_fname,
            CASE WHEN ct.client_id = ? THEN fr.last_name  ELSE cl.last_name  END AS partner_lname,
-           CASE WHEN ct.client_id = ? THEN fr.avatar     ELSE cl.avatar     END AS partner_avatar,
+           CASE WHEN ct.client_id = ? THEN fr.avatar       ELSE cl.avatar       END AS partner_avatar,
+           CASE WHEN ct.client_id = ? THEN fr.is_verified ELSE cl.is_verified END AS partner_verified,
            (SELECT body        FROM messages WHERE contract_id = ct.id ORDER BY created_at DESC LIMIT 1) AS last_msg,
            (SELECT created_at  FROM messages WHERE contract_id = ct.id ORDER BY created_at DESC LIMIT 1) AS last_msg_at,
            (SELECT COUNT(*)    FROM messages WHERE contract_id = ct.id AND sender_id != ? AND is_read = 0) AS unread
@@ -31,7 +32,7 @@ $stmt = $pdo->prepare('
     WHERE (ct.client_id = ? OR ct.freelancer_id = ?)
     ORDER BY last_msg_at DESC, ct.created_at DESC
 ');
-$stmt->execute([$userId,$userId,$userId,$userId,$userId,$userId]);
+$stmt->execute([$userId,$userId,$userId,$userId,$userId,$userId,$userId]);
 $conversations = $stmt->fetchAll();
 
 $pageTitle = 'Messages — UPC Freelance';
@@ -79,14 +80,7 @@ require_once '../../includes/header.php';
            class="flex items-center gap-4 px-5 py-4 hover:bg-surface-container-low transition-colors <?= $conv['unread'] > 0 ? 'bg-blue-50/30' : '' ?>">
 
             <div class="relative flex-shrink-0">
-                <?php if ($conv['partner_avatar']): ?>
-                <img src="/upc_freelance/storage/<?= h($conv['partner_avatar']) ?>" alt="Avatar"
-                     class="w-12 h-12 rounded-full object-cover"/>
-                <?php else: ?>
-                <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-lg font-bold text-primary">
-                    <?= mb_strtoupper(mb_substr($conv['partner_fname'], 0, 1)) ?>
-                </div>
-                <?php endif; ?>
+                <?= renderAvatar($conv['partner_avatar'] ?? null, $conv['partner_fname'], $conv['partner_lname'], (bool)($conv['partner_verified'] ?? false), 'w-12 h-12', 'rounded-full') ?>
                 <span class="absolute bottom-0 right-0 w-3 h-3 <?= $dotColor ?> rounded-full border-2 border-white"></span>
             </div>
 
@@ -168,9 +162,13 @@ require_once '../../includes/header.php';
             const dot      = statusDots[conv.status] || 'bg-slate-400';
             const unread   = parseInt(conv.unread) || 0;
             const initiale = conv.partner_fname ? conv.partner_fname.charAt(0).toUpperCase() : '?';
-            const avatarHtml = conv.partner_avatar
+            const imgHtml = conv.partner_avatar
                 ? `<img src="/upc_freelance/storage/${escHtml(conv.partner_avatar)}" alt="Avatar" class="w-12 h-12 rounded-full object-cover"/>`
                 : `<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-lg font-bold text-primary">${initiale}</div>`;
+            const verifiedBadge = conv.partner_verified && parseInt(conv.partner_verified)
+                ? `<span class="absolute -bottom-0.5 -right-0.5 bg-white rounded-full leading-none"><span class="material-symbols-outlined text-secondary" style="font-size:14px;font-variation-settings:'FILL' 1">verified</span></span>`
+                : '';
+            const avatarHtml = `<div class="relative inline-flex flex-shrink-0">${imgHtml}${verifiedBadge}</div>`;
             const lastMsgHtml = conv.last_msg
                 ? escHtml(truncateJs(conv.last_msg, 60))
                 : '<em class="text-slate-400">Aucun message</em>';

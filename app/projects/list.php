@@ -58,7 +58,7 @@ $pagination = paginate($total, $perPage, $page, '/upc_freelance/app/projects/lis
 // Projets
 $stmt = $pdo->prepare("
     SELECT p.*, c.name AS category_name, c.icon AS category_icon,
-           u.first_name, u.last_name,
+           u.first_name, u.last_name, u.avatar, u.is_verified,
            (SELECT COUNT(*) FROM postulations WHERE project_id = p.id) AS nb_postulations
     FROM projects p
     LEFT JOIN categories c ON c.id = p.category_id
@@ -214,9 +214,7 @@ require_once '../../includes/header.php';
                 <!-- Footer -->
                 <div class="flex items-center justify-between pt-3 border-t border-slate-100">
                     <div class="flex items-center gap-1.5">
-                        <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                            <?= mb_substr($p['first_name'], 0, 1) ?>
-                        </div>
+                        <?= renderAvatar($p['avatar'] ?? null, $p['first_name'], $p['last_name'], (bool)($p['is_verified'] ?? false), 'w-6 h-6', 'rounded-full') ?>
                         <span class="text-xs text-on-surface-variant"><?= h($p['first_name']) ?></span>
                     </div>
                     <span class="text-xs text-slate-400">

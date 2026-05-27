@@ -25,7 +25,8 @@ if ($status && in_array($status, ['pending','accepted','rejected','withdrawn']))
 $stmt = $pdo->prepare('
     SELECT po.*, p.title AS project_title, p.budget_min, p.budget_max, p.deadline, p.status AS project_status,
            c.name AS category_name,
-           u.first_name AS client_fname, u.last_name AS client_lname
+           u.first_name AS client_fname, u.last_name AS client_lname,
+           u.avatar AS client_avatar, u.is_verified AS client_verified
     FROM postulations po
     JOIN projects p ON p.id = po.project_id
     LEFT JOIN categories c ON c.id = p.category_id
@@ -81,9 +82,7 @@ require_once '../../includes/header.php';
     ?>
     <div class="bg-white rounded-2xl border border-slate-100 p-5 custom-shadow-low hover:border-secondary/30 transition-all">
         <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0">
-                <span class="material-symbols-outlined text-secondary">work</span>
-            </div>
+            <?= renderAvatar($a['client_avatar'] ?? null, $a['client_fname'], $a['client_lname'], (bool)($a['client_verified'] ?? false), 'w-12 h-12', 'rounded-xl') ?>
             <div class="flex-1 min-w-0">
                 <div class="flex items-start justify-between gap-2 mb-1">
                     <a href="/upc_freelance/app/projects/details.php?id=<?= $a['project_id'] ?>"
