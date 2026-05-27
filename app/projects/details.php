@@ -57,7 +57,7 @@ if ($isOwner) {
     // On joint freelancer_profiles pour récupérer university et field_of_study.
     $stmt = $pdo->prepare('
         SELECT po.*,
-               u.first_name, u.last_name, u.avatar,
+               u.first_name, u.last_name, u.avatar, u.is_verified,
                fp.title AS freelancer_title,
                fp.university, fp.field_of_study,
                fp.rating, fp.total_reviews
@@ -154,9 +154,7 @@ require_once '../../includes/header.php';
             <div class="divide-y divide-slate-50">
                 <?php foreach (array_slice($postulations, 0, 5) as $po): ?>
                 <div class="p-5 flex items-start gap-4">
-                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary flex-shrink-0 text-sm">
-                        <?= mb_strtoupper(mb_substr($po['first_name'], 0, 1)) ?>
-                    </div>
+                    <?= renderAvatar($po['avatar'] ?? null, $po['first_name'], $po['last_name'] ?? '', (bool)($po['is_verified'] ?? false), 'w-10 h-10', 'rounded-full') ?>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between gap-2">
                             <p class="font-semibold text-primary text-sm"><?= h($po['first_name'] . ' ' . $po['last_name']) ?></p>
@@ -287,14 +285,7 @@ require_once '../../includes/header.php';
         <div class="bg-white rounded-2xl border border-slate-100 p-5 custom-shadow-low">
             <h3 class="font-semibold text-primary mb-4">À propos du client</h3>
             <div class="flex items-center gap-3 mb-4">
-                <?php if ($project['avatar']): ?>
-                <img src="/upc_freelance/storage/<?= h($project['avatar']) ?>" alt="Avatar"
-                     class="w-12 h-12 rounded-full object-cover flex-shrink-0"/>
-                <?php else: ?>
-                <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-lg flex-shrink-0">
-                    <?= mb_strtoupper(mb_substr($project['first_name'], 0, 1)) ?>
-                </div>
-                <?php endif; ?>
+                <?= renderAvatar($project['avatar'] ?? null, $project['first_name'], $project['last_name'], false, 'w-12 h-12', 'rounded-full') ?>
                 <div>
                     <p class="font-semibold text-primary text-sm"><?= h($project['first_name'] . ' ' . $project['last_name']) ?></p>
                     <?php if ($project['company_name']): ?>

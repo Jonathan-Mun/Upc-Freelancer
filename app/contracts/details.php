@@ -19,8 +19,8 @@ if (!$contractId) redirect('../../app/contracts/list.php');
 $stmt = $pdo->prepare('
     SELECT c.*,
            p.title AS project_title, p.id AS project_id, p.description AS project_desc,
-           cl.first_name AS client_fname, cl.last_name AS client_lname, cl.avatar AS client_avatar,
-           fr.first_name AS freelancer_fname, fr.last_name AS freelancer_lname, fr.avatar AS freelancer_avatar
+           cl.first_name AS client_fname, cl.last_name AS client_lname, cl.avatar AS client_avatar, cl.is_verified AS client_verified,
+           fr.first_name AS freelancer_fname, fr.last_name AS freelancer_lname, fr.avatar AS freelancer_avatar, fr.is_verified AS freelancer_verified
     FROM contracts c
     JOIN projects p ON p.id = c.project_id
     JOIN users cl   ON cl.id = c.client_id
@@ -144,9 +144,7 @@ require_once '../../includes/header.php';
             <div class="flex <?= $isMe ? 'justify-end' : 'justify-start' ?> gap-2"
                  data-msg-id="<?= $msg['id'] ?>">
                 <?php if (!$isMe): ?>
-                <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0 mt-auto">
-                    <?= mb_strtoupper(mb_substr($msg['first_name'], 0, 1)) ?>
-                </div>
+                <?= renderAvatar($msg['avatar'] ?? null, $msg['first_name'], $msg['last_name'], false, 'w-8 h-8', 'rounded-full', 'mt-auto') ?>
                 <?php endif; ?>
                 <div class="max-w-[70%]">
                     <?php if (!$isMe): ?>
@@ -160,9 +158,7 @@ require_once '../../includes/header.php';
                     </p>
                 </div>
                 <?php if ($isMe): ?>
-                <div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0 mt-auto">
-                    <?= mb_strtoupper(mb_substr($user['first_name'], 0, 1)) ?>
-                </div>
+                <?= renderAvatar($user['avatar'] ?? null, $user['first_name'], $user['last_name'] ?? '', false, 'w-8 h-8', 'rounded-full', 'mt-auto') ?>
                 <?php endif; ?>
             </div>
             <?php endforeach; ?>
@@ -246,16 +242,20 @@ require_once '../../includes/header.php';
         <div class="bg-white rounded-2xl border border-slate-100 p-5 custom-shadow-low">
             <h3 class="font-semibold text-primary mb-4">Participants</h3>
             <div class="flex items-center gap-3 mb-3">
-                <?= renderAvatar($contract['client_avatar'] ?? null, $contract['client_fname'], $contract['client_lname'], false, 'w-10 h-10', 'rounded-full') ?>
+                <?= renderAvatar($contract['client_avatar'] ?? null, $contract['client_fname'], $contract['client_lname'], (bool)($contract['client_verified'] ?? false), 'w-10 h-10', 'rounded-full') ?>
                 <div>
-                    <p class="text-sm font-semibold text-primary"><?= h($contract['client_fname'] . ' ' . $contract['client_lname']) ?></p>
+                    <p class="text-sm font-semibold text-primary flex items-center gap-1">
+                        <?= h($contract['client_fname'] . ' ' . $contract['client_lname']) ?>
+                    </p>
                     <p class="text-xs text-slate-400">Client <?= $isClient ? '(vous)' : '' ?></p>
                 </div>
             </div>
             <div class="border-t border-slate-100 pt-3 flex items-center gap-3">
-                <?= renderAvatar($contract['freelancer_avatar'] ?? null, $contract['freelancer_fname'], $contract['freelancer_lname'], false, 'w-10 h-10', 'rounded-full') ?>
+                <?= renderAvatar($contract['freelancer_avatar'] ?? null, $contract['freelancer_fname'], $contract['freelancer_lname'], (bool)($contract['freelancer_verified'] ?? false), 'w-10 h-10', 'rounded-full') ?>
                 <div>
-                    <p class="text-sm font-semibold text-primary"><?= h($contract['freelancer_fname'] . ' ' . $contract['freelancer_lname']) ?></p>
+                    <p class="text-sm font-semibold text-primary flex items-center gap-1">
+                        <?= h($contract['freelancer_fname'] . ' ' . $contract['freelancer_lname']) ?>
+                    </p>
                     <p class="text-xs text-slate-400">Freelancer <?= $isFreelancer ? '(vous)' : '' ?></p>
                 </div>
             </div>
@@ -327,9 +327,16 @@ require_once '../../includes/header.php';
             ? 'bg-primary text-white rounded-tr-sm'
             : 'bg-surface-container-low text-on-surface rounded-tl-sm';
         const timeAlign = isMe ? 'text-right mr-1' : 'ml-1';
-        const avatar    = isMe
-            ? `<div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-xs font-bold text-secondary flex-shrink-0 mt-auto">${initiale}</div>`
-            : `<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary flex-shrink-0 mt-auto">${initiale}</div>`;
+        function buildAvatarHtml(avatarPath, initiale, isCurrentUser) {
+            const base  = '/upc_freelance/storage/';
+            const color = isCurrentUser ? 'bg-secondary/10 text-secondary' : 'bg-primary/10 text-primary';
+            if (avatarPath) {
+                return `<img src="${base}${escHtml(avatarPath)}" alt="Avatar" class="w-8 h-8 rounded-full object-cover flex-shrink-0 mt-auto"/>`;
+            }
+            return `<div class="w-8 h-8 rounded-full ${color} flex items-center justify-center text-xs font-bold flex-shrink-0 mt-auto">${initiale}</div>`;
+        }
+        const myAvatar    = <?= json_encode($user['avatar'] ?? null) ?>;
+        const avatar = buildAvatarHtml(isMe ? myAvatar : (msg.avatar || null), initiale, isMe);
         const senderName = !isMe
             ? `<p class="text-xs text-slate-400 mb-1 ml-1">${escHtml(msg.first_name)}</p>`
             : '';
