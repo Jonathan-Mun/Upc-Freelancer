@@ -9,7 +9,7 @@ require_once '../../includes/auth.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/db.php';
 
-requireRole('client');
+requireRole('client', 'freelancer');
 
 $user   = currentUser();
 $pdo    = getDB();

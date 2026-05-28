@@ -57,7 +57,7 @@ if ($isOwner) {
     // On joint freelancer_profiles pour récupérer university et field_of_study.
     $stmt = $pdo->prepare('
         SELECT po.*,
-               u.first_name, u.last_name, u.avatar, u.is_verified,
+               u.first_name, u.last_name, u.avatar,
                fp.title AS freelancer_title,
                fp.university, fp.field_of_study,
                fp.rating, fp.total_reviews
@@ -154,7 +154,9 @@ require_once '../../includes/header.php';
             <div class="divide-y divide-slate-50">
                 <?php foreach (array_slice($postulations, 0, 5) as $po): ?>
                 <div class="p-5 flex items-start gap-4">
-                    <?= renderAvatar($po['avatar'] ?? null, $po['first_name'], $po['last_name'] ?? '', (bool)($po['is_verified'] ?? false), 'w-10 h-10', 'rounded-full') ?>
+                    <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary flex-shrink-0 text-sm">
+                        <?= mb_strtoupper(mb_substr($po['first_name'], 0, 1)) ?>
+                    </div>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between gap-2">
                             <p class="font-semibold text-primary text-sm"><?= h($po['first_name'] . ' ' . $po['last_name']) ?></p>
@@ -285,7 +287,14 @@ require_once '../../includes/header.php';
         <div class="bg-white rounded-2xl border border-slate-100 p-5 custom-shadow-low">
             <h3 class="font-semibold text-primary mb-4">À propos du client</h3>
             <div class="flex items-center gap-3 mb-4">
-                <?= renderAvatar($project['avatar'] ?? null, $project['first_name'], $project['last_name'], false, 'w-12 h-12', 'rounded-full') ?>
+                <?php if ($project['avatar']): ?>
+                <img src="/upc_freelance/storage/<?= h($project['avatar']) ?>" alt="Avatar"
+                     class="w-12 h-12 rounded-full object-cover flex-shrink-0"/>
+                <?php else: ?>
+                <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center font-bold text-primary text-lg flex-shrink-0">
+                    <?= mb_strtoupper(mb_substr($project['first_name'], 0, 1)) ?>
+                </div>
+                <?php endif; ?>
                 <div>
                     <p class="font-semibold text-primary text-sm"><?= h($project['first_name'] . ' ' . $project['last_name']) ?></p>
                     <?php if ($project['company_name']): ?>
@@ -309,15 +318,54 @@ require_once '../../includes/header.php';
 
         <!-- Actions client (propriétaire) -->
         <?php if ($isOwner): ?>
-        <div class="bg-white rounded-2xl border border-slate-100 p-5 custom-shadow-low space-y-2">
+        <div class="bg-white rounded-2xl border border-slate-100 p-5 custom-shadow-low space-y-3">
             <a href="/upc_freelance/app/projects/edit.php?id=<?= $projectId ?>"
                class="flex items-center gap-2 w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm hover:border-secondary hover:text-secondary transition-colors">
                 <span class="material-symbols-outlined text-base">edit</span> Modifier le projet
             </a>
+
+            <?php if ($project['visibility'] === 'private'): ?>
+            <!-- Lien de partage projet privé -->
+            <div class="rounded-xl bg-blue-50 border border-blue-200 p-4">
+                <p class="text-xs font-semibold text-primary flex items-center gap-1.5 mb-2">
+                    <span class="material-symbols-outlined text-sm text-secondary" style="font-variation-settings:'FILL' 1">lock</span>
+                    Lien de partage privé
+                </p>
+                <p class="text-xs text-on-surface-variant mb-3">
+                    Partagez ce lien uniquement aux freelancers que vous souhaitez inviter.
+                </p>
+                <div class="flex items-center gap-2 bg-white rounded-lg border border-blue-200 p-2.5">
+                    <input id="share-link" type="text" readonly
+                           value="<?= h((isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . '/upc_freelance/app/projects/details.php?id=' . $projectId . '&token=' . $project['uuid']) ?>"
+                           class="flex-1 text-xs text-slate-600 font-mono bg-transparent outline-none border-none"/>
+                    <button onclick="copyShareLink()" id="copy-btn"
+                            class="flex-shrink-0 flex items-center gap-1 text-xs font-semibold text-secondary hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-blue-50">
+                        <span class="material-symbols-outlined text-sm">content_copy</span>
+                        Copier
+                    </button>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+function copyShareLink() {
+    const input = document.getElementById('share-link');
+    const btn   = document.getElementById('copy-btn');
+    input.select();
+    navigator.clipboard.writeText(input.value).then(() => {
+        btn.innerHTML = '<span class="material-symbols-outlined text-sm">check</span> Copié !';
+        btn.style.color = '#16a34a';
+        setTimeout(() => {
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm">content_copy</span> Copier';
+            btn.style.color = '';
+        }, 2000);
+    });
+}
+</script>
 
 <?php
 $appLayout = true;
