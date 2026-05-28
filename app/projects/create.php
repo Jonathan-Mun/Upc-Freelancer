@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Projet privé : notifier le client avec le lien de partage
         if ($visibility === 'private') {
             $shareLink = '/upc_freelance/app/projects/details.php?id=' . $projectId . '&token=' . $uuid;
-            createNotification(
+            sendNotification(
                 $user['id'],
                 'contract_created',
                 'Projet privé créé',
