@@ -707,7 +707,6 @@ tailwind.config = {
         <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
             <a href="<?= $BASE ?>/public/index.php"        class="text-slate-600 hover:text-secondary transition-colors">Accueil</a>
             <a href="<?= $BASE ?>/public/how-it-works.php" class="text-slate-600 hover:text-secondary transition-colors">Comment ça marche</a>
-            <a href="<?= $BASE ?>/app/projects/list.php"   class="text-slate-600 hover:text-secondary transition-colors">Projets</a>
             <a href="<?= $BASE ?>/public/about.php"        class="text-slate-600 hover:text-secondary transition-colors">À propos</a>
             <a href="<?= $BASE ?>/public/contact.php"      class="text-slate-600 hover:text-secondary transition-colors">Contact</a>
         </nav>
