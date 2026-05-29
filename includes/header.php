@@ -413,7 +413,7 @@ tailwind.config = {
     const BASE           = '/upc_freelance';
     const NOTIF_API      = BASE + '/app/notifications/api-notifications.php';
     const MSG_API        = BASE + '/app/messages/api-conversations.php';
-    const INTERVAL       = 10000; // 10 secondes
+    const INTERVAL       = 2000; // 2 secondes
     const IS_NOTIF_PAGE  = window.location.pathname.includes('/notifications/');
     const IS_INBOX_PAGE  = window.location.pathname.includes('/messages/');
 
