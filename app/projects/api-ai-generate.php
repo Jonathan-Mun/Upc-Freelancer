@@ -97,15 +97,15 @@ Retourne ce JSON (sans aucun texte autour) :
 {
   "title": "titre du projet max 100 caractères",
   "skills": ["technologie1", "technologie2", "technologie3", "technologie4"],
-  "budget_min": 50000,
-  "budget_max": 200000,
+  "budget_min": 50,
+  "budget_max": 5000,
   "category_id": 1,
   "deadline_days": 30,
   "visibility": "public"
 }
 
 - skills = technologies/langages/outils concrets pour réaliser ce projet (PHP, MySQL, JS, React, Figma, etc.)
-- budgets en Francs CFA, réalistes pour un étudiant freelance ivoirien
+- budgets en USD, réalistes pour un étudiant freelance ivoirien
 - deadline_days entre 14 et 90
 PROMPT;
 

@@ -292,12 +292,8 @@ require_once '../../includes/header.php';
             </h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-primary mb-1.5">
-                        Budget min (XOF)
-                        <span class="ml-1 text-xs font-normal text-slate-400">— solde : <strong class="text-secondary"><?= money($walletBalance) ?></strong></span>
-                    </label>
                     <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">CFA</span>
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">USD</span>
                         <input type="number" name="budget_min" id="budget_min"
                                min="0" step="100" max="<?= $walletBalance ?>"
                                value="<?= h($_POST['budget_min'] ?? '') ?>"
@@ -310,12 +306,8 @@ require_once '../../includes/header.php';
                     </p>
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-primary mb-1.5">
-                        Budget max (XOF)
-                        <span class="ml-1 text-xs font-normal text-slate-400">— solde : <strong class="text-secondary"><?= money($walletBalance) ?></strong></span>
-                    </label>
                     <div class="relative">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">CFA</span>
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-medium">USD</span>
                         <input type="number" name="budget_max" id="budget_max"
                                min="0" step="100" max="<?= $walletBalance ?>"
                                value="<?= h($_POST['budget_max'] ?? '') ?>"
