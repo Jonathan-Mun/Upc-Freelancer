@@ -46,10 +46,11 @@ function requireLogin(): void {
     }
 }
 
-function requireRole(string $role): void {
+// Accepte un rôle unique ('client') ou plusieurs rôles ('client','freelancer')
+function requireRole(string ...$roles): void {
     requireLogin();
     $user = currentUser();
-    if (!$user || $user['role'] !== $role) {
+    if (!$user || !in_array($user['role'], $roles, true)) {
         http_response_code(403);
         die('Accès interdit.');
     }

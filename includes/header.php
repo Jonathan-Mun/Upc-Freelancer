@@ -210,7 +210,7 @@ tailwind.config = {
             ['icon'=>'account_balance_wallet', 'label'=>'Wallet',           'href'=>$BASE.'/app/wallet/index.php',                 'dir'=>'wallet',       'file'=>'index.php'],
             ['icon'=>'notifications',          'label'=>'Notifications',    'href'=>$BASE.'/app/notifications/index.php',          'dir'=>'notifications','file'=>'index.php'],
             ['icon'=>'verified_user',          'label'=>'Vérification',     'href'=>$BASE.'/app/verification/index.php',           'dir'=>'verification', 'file'=>'index.php'],
-            ['icon'=>'person',                 'label'=>'Mon profil',       'href'=>$BASE.'/app/profile/edit.php',                 'dir'=>'profile',      'file'=>'edit.php'],
+            ['icon'=>'person',                 'label'=>'Mon profil',       'href'=>$BASE.'/app/profile/view.php?id='.$user['id'], 'dir'=>'profile',      'file'=>'view.php'],
         ];
         foreach ($navItems as $nav):
             $isActive = ($currentDir === $nav['dir'] && $currentFile === $nav['file'])
@@ -413,7 +413,7 @@ tailwind.config = {
     const BASE           = '/upc_freelance';
     const NOTIF_API      = BASE + '/app/notifications/api-notifications.php';
     const MSG_API        = BASE + '/app/messages/api-conversations.php';
-    const INTERVAL       = 500; // 1 secondes
+    const INTERVAL       = 2000; // 2 secondes
     const IS_NOTIF_PAGE  = window.location.pathname.includes('/notifications/');
     const IS_INBOX_PAGE  = window.location.pathname.includes('/messages/');
 
@@ -448,35 +448,47 @@ tailwind.config = {
         });
     }
 
-    // ── Toast ─────────────────────────────────────────────
-    function showToast(icon, title, body, link, color) {
-        const toast = document.createElement('div');
-        toast.className = 'upc-toast';
-
+    // ── Toast (même design que la page notifications) ────
+    function showToast(ti, title, body, link) {
         // Décaler les toasts existants
         document.querySelectorAll('.upc-toast').forEach((t, i) => {
-            t.style.bottom = (24 + (i + 1) * 78) + 'px';
+            t.style.bottom = (24 + (i + 1) * 82) + 'px';
         });
 
+        const toast = document.createElement('div');
+        toast.className = 'upc-toast';
         toast.style.cssText = `
             position:fixed; bottom:24px; right:24px; z-index:9999;
-            background:#002045; color:#fff;
-            padding:14px 18px; border-radius:14px;
-            box-shadow:0 8px 28px rgba(0,32,69,.35);
+            background:#fff; color:#0d1c2e;
+            padding:14px 16px; border-radius:16px;
+            box-shadow:0 8px 28px rgba(0,32,69,.18);
             display:flex; align-items:flex-start; gap:12px;
             max-width:320px; width:calc(100vw - 48px);
             animation:slideInToast .25s ease;
             cursor:${link ? 'pointer' : 'default'};
-            border-left: 3px solid ${color};
+            border:1px solid #e2e8f0;
         `;
         toast.innerHTML = `
-            <span style="font-size:20px;line-height:1;flex-shrink:0;margin-top:1px">${icon}</span>
-            <div style="flex:1;min-width:0">
-                <p style="font-weight:700;font-size:13px;margin:0 0 2px">${title}</p>
-                ${body ? `<p style="font-size:12px;opacity:.75;margin:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${body}</p>` : ''}
+            <div style="
+                width:40px; height:40px; border-radius:50%;
+                background:${ti.bg};
+                display:flex; align-items:center; justify-content:center;
+                flex-shrink:0;
+            ">
+                <span class="material-symbols-outlined" style="
+                    font-size:20px; color:${ti.color};
+                    font-variation-settings:'FILL' 1;
+                ">${ti.icon}</span>
             </div>
-            <button onclick="this.parentElement.remove()"
-                    style="background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:18px;line-height:1;flex-shrink:0;margin-top:-2px">×</button>
+            <div style="flex:1;min-width:0;padding-top:2px;">
+                <p style="font-weight:700;font-size:13px;color:#002045;margin:0 0 3px;">${title}</p>
+                ${body ? `<p style="font-size:12px;color:#43474e;margin:0;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">${body}</p>` : ''}
+            </div>
+            <button onclick="this.parentElement.remove()" style="
+                background:none;border:none;color:#94a3b8;
+                cursor:pointer;font-size:18px;line-height:1;
+                flex-shrink:0;margin-top:-2px;padding:2px;
+            ">×</button>
         `;
         if (link) toast.addEventListener('click', e => { if (e.target.tagName !== 'BUTTON') window.location.href = link; });
         document.body.appendChild(toast);
@@ -503,17 +515,18 @@ tailwind.config = {
         document.head.appendChild(s);
     }
 
-    // ── Icônes notifs ─────────────────────────────────────
+    // ── Icônes notifs (Material Symbols — même design que la page notifs)
     const NOTIF_ICONS = {
-        new_application:      '📥',
-        application_accepted: '✅',
-        application_rejected: '❌',
-        new_message:          '💬',
-        payment_received:     '💰',
-        deposit_success:      '➕',
-        contract_created:     '📄',
-        welcome:              '🎉',
+        welcome:              { icon: 'celebration',  color: '#9333ea', bg: '#f5f3ff' },
+        new_application:      { icon: 'inbox',        color: '#d97706', bg: '#fffbeb' },
+        application_accepted: { icon: 'check_circle', color: '#16a34a', bg: '#f0fdf4' },
+        application_rejected: { icon: 'cancel',       color: '#f87171', bg: '#fef2f2' },
+        new_message:          { icon: 'chat',         color: '#3b82f6', bg: '#eff6ff' },
+        payment_received:     { icon: 'payments',     color: '#059669', bg: '#ecfdf5' },
+        deposit_success:      { icon: 'add_circle',   color: '#16a34a', bg: '#f0fdf4' },
+        contract_created:     { icon: 'description',  color: '#0061a5', bg: '#eff4ff' },
     };
+    const NOTIF_DEFAULT = { icon: 'notifications', color: '#64748b', bg: '#f8fafc' };
 
     // ── État ──────────────────────────────────────────────
     let lastNotifId  = 0;
@@ -549,9 +562,10 @@ tailwind.config = {
 
             if (lastNotifId > 0 && notifs.length > 0) {
                 pulseBadges(NOTIF_BADGES);
-                notifs.slice(0, 3).forEach(n =>
-                    showToast(NOTIF_ICONS[n.type] || '🔔', n.title, n.body, n.link, '#66affe')
-                );
+                notifs.slice(0, 3).forEach(n => {
+                    const ti = NOTIF_ICONS[n.type] || NOTIF_DEFAULT;
+                    showToast(ti, n.title, n.body, n.link);
+                });
                 if (IS_NOTIF_PAGE && window.UPCNotifPage) window.UPCNotifPage.refresh(notifs, count);
             }
 
@@ -594,8 +608,90 @@ tailwind.config = {
 <!-- ════════════ LAYOUT PUBLIC ════════════ -->
 <body class="bg-background text-on-surface font-body-md antialiased">
 
+<!-- Drawer mobile public -->
+<div id="pub-drawer" style="position:fixed;inset:0;z-index:999;display:none;">
+    <div id="pub-drawer-backdrop" style="position:absolute;inset:0;background:rgba(0,0,0,0.45);"></div>
+    <div id="pub-drawer-panel" style="
+        position:absolute;top:0;right:0;bottom:0;width:280px;
+        background:#fff;box-shadow:-4px 0 24px rgba(0,0,0,0.15);
+        display:flex;flex-direction:column;padding:24px 20px;
+        transform:translateX(100%);transition:transform 0.25s ease;
+    ">
+        <!-- Header drawer -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;">
+            <div style="display:flex;align-items:center;gap:10px;">
+                <svg width="30" height="30" viewBox="0 0 38 38" fill="none">
+                    <rect width="38" height="38" rx="10" fill="#002045"/>
+                    <path d="M10 12 L10 22 Q10 28 19 28 Q28 28 28 22 L28 12" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+                    <circle cx="19" cy="12" r="1.5" fill="#66affe"/>
+                    <path d="M14 18 L24 18" stroke="#66affe" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span style="font-weight:700;color:#002045;font-size:15px;">UPC Freelance</span>
+            </div>
+            <button id="pub-drawer-close" style="background:none;border:none;cursor:pointer;padding:6px;border-radius:8px;">
+                <span class="material-symbols-outlined" style="color:#64748b;font-size:22px;">close</span>
+            </button>
+        </div>
+
+        <!-- Nav links -->
+        <nav style="display:flex;flex-direction:column;gap:4px;flex:1;">
+            <?php
+            $pubCurrent = $_SERVER['REQUEST_URI'];
+            $pubLinks = [
+                ['href' => $BASE.'/public/index.php',        'label' => 'Accueil',           'icon' => 'home'],
+                ['href' => $BASE.'/public/how-it-works.php', 'label' => 'Comment ça marche', 'icon' => 'help_outline'],
+                ['href' => $BASE.'/app/projects/list.php',   'label' => 'Projets',           'icon' => 'search'],
+                ['href' => $BASE.'/public/about.php',        'label' => 'À propos',          'icon' => 'info'],
+                ['href' => $BASE.'/public/contact.php',      'label' => 'Contact',           'icon' => 'mail'],
+            ];
+            foreach ($pubLinks as $pl):
+                $isActive = str_contains($pubCurrent, basename($pl['href']));
+            ?>
+            <a href="<?= $pl['href'] ?>" style="
+                display:flex;align-items:center;gap:12px;
+                padding:12px 14px;border-radius:10px;
+                color:<?= $isActive ? '#0061a5' : '#43474e' ?>;
+                background:<?= $isActive ? '#eff4ff' : 'transparent' ?>;
+                font-size:14px;font-weight:<?= $isActive ? '600' : '400' ?>;
+                text-decoration:none;transition:background 0.15s;
+            " onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='<?= $isActive ? '#eff4ff' : 'transparent' ?>'">
+                <span class="material-symbols-outlined" style="font-size:20px;color:<?= $isActive ? '#0061a5' : '#94a3b8' ?>;"><?= $pl['icon'] ?></span>
+                <?= $pl['label'] ?>
+            </a>
+            <?php endforeach; ?>
+        </nav>
+
+        <!-- Boutons auth en bas du drawer -->
+        <div style="display:flex;flex-direction:column;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0;">
+            <?php if (isLoggedIn()): ?>
+            <a href="<?= $BASE ?>/app/dashboard.php" style="
+                display:flex;align-items:center;justify-content:center;gap:8px;
+                background:#002045;color:#fff;padding:13px;border-radius:12px;
+                font-size:14px;font-weight:700;text-decoration:none;
+            ">
+                <span class="material-symbols-outlined" style="font-size:18px;">dashboard</span>
+                Mon espace
+            </a>
+            <?php else: ?>
+            <a href="<?= $BASE ?>/public/register.php" style="
+                display:flex;align-items:center;justify-content:center;
+                background:#002045;color:#fff;padding:13px;border-radius:12px;
+                font-size:14px;font-weight:700;text-decoration:none;
+            ">S'inscrire</a>
+            <a href="<?= $BASE ?>/public/login.php" style="
+                display:flex;align-items:center;justify-content:center;
+                border:1.5px solid #e2e8f0;color:#0061a5;padding:12px;border-radius:12px;
+                font-size:14px;font-weight:600;text-decoration:none;
+            ">Connexion</a>
+            <?php endif; ?>
+        </div>
+    </div>
+</div>
+
 <header class="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-sm">
-    <div class="flex justify-between items-center px-6 h-16 max-w-screen-xl mx-auto">
+    <div class="flex justify-between items-center px-4 md:px-6 h-16 max-w-screen-xl mx-auto">
+
+        <!-- Logo -->
         <a href="<?= $BASE ?>/public/index.php" class="flex items-center gap-3">
             <svg width="34" height="34" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="38" height="38" rx="10" fill="#002045"/>
@@ -606,28 +702,63 @@ tailwind.config = {
             </svg>
             <span class="text-lg font-bold text-primary tracking-tight">UPC Freelance</span>
         </a>
+
+        <!-- Nav desktop -->
         <nav class="hidden md:flex items-center gap-6 text-sm font-medium">
             <a href="<?= $BASE ?>/public/index.php"        class="text-slate-600 hover:text-secondary transition-colors">Accueil</a>
             <a href="<?= $BASE ?>/public/how-it-works.php" class="text-slate-600 hover:text-secondary transition-colors">Comment ça marche</a>
-            <a href="<?= $BASE ?>/app/projects/list.php"   class="text-slate-600 hover:text-secondary transition-colors">Projets</a>
+            <a href="<?= $BASE ?>/public/about.php"        class="text-slate-600 hover:text-secondary transition-colors">À propos</a>
             <a href="<?= $BASE ?>/public/contact.php"      class="text-slate-600 hover:text-secondary transition-colors">Contact</a>
         </nav>
-        <div class="flex items-center gap-3">
+
+        <!-- Boutons desktop -->
+        <div class="hidden md:flex items-center gap-3">
             <?php if (isLoggedIn()): ?>
             <a href="<?= $BASE ?>/app/dashboard.php"
                class="bg-primary text-on-primary font-button text-button px-4 py-2 rounded-lg hover:opacity-90 transition-opacity active:scale-95">
                 Mon espace
             </a>
             <?php else: ?>
-            <a href="<?= $BASE ?>/public/login.php"    class="text-sm font-medium text-secondary hover:underline">Connexion</a>
+            <a href="<?= $BASE ?>/public/login.php" class="text-sm font-medium text-secondary hover:underline">Connexion</a>
             <a href="<?= $BASE ?>/public/register.php"
                class="bg-primary text-on-primary font-button text-button px-4 py-2 rounded-lg hover:opacity-90 transition-opacity active:scale-95">
                 S'inscrire
             </a>
             <?php endif; ?>
         </div>
+
+        <!-- Hamburger mobile -->
+        <button id="pub-menu-btn" class="md:hidden p-2 rounded-lg hover:bg-slate-100 transition-colors">
+            <span class="material-symbols-outlined text-slate-700">menu</span>
+        </button>
     </div>
 </header>
+
+<script>
+(function () {
+    const btn      = document.getElementById('pub-menu-btn');
+    const drawer   = document.getElementById('pub-drawer');
+    const panel    = document.getElementById('pub-drawer-panel');
+    const closeBtn = document.getElementById('pub-drawer-close');
+    const backdrop = document.getElementById('pub-drawer-backdrop');
+
+    function open()  {
+        drawer.style.display = 'block';
+        requestAnimationFrame(() => panel.style.transform = 'translateX(0)');
+        document.body.style.overflow = 'hidden';
+    }
+    function close() {
+        panel.style.transform = 'translateX(100%)';
+        setTimeout(() => drawer.style.display = 'none', 250);
+        document.body.style.overflow = '';
+    }
+
+    btn?.addEventListener('click', open);
+    closeBtn?.addEventListener('click', close);
+    backdrop?.addEventListener('click', close);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+})();
+</script>
 
 <main class="pt-16">
 <?php endif; ?>

@@ -24,10 +24,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $uid    = (int)($_POST['user_id'] ?? 0);
 
     if ($action === 'toggle_active' && $uid) {
-        $stmt = $pdo->prepare('SELECT is_active FROM users WHERE id = ?');
+        $stmt = $pdo->prepare('SELECT is_active, first_name, last_name FROM users WHERE id = ?');
         $stmt->execute([$uid]);
-        $current = (int)$stmt->fetchColumn();
-        $pdo->prepare('UPDATE users SET is_active = ? WHERE id = ?')->execute([!$current, $uid]);
+        $user_row = $stmt->fetch();
+        if ($user_row) {
+            $newState = $user_row['is_active'] ? 0 : 1;
+            $pdo->prepare('UPDATE users SET is_active = ? WHERE id = ?')->execute([$newState, $uid]);
+            // Notif à l'utilisateur
+            $msg = $newState
+                ? 'Votre compte a été réactivé par un administrateur.'
+                : 'Votre compte a été suspendu par un administrateur.';
+            $pdo->prepare('INSERT INTO notifications (user_id, type, title, body) VALUES (?, ?, ?, ?)')
+                ->execute([$uid,
+                    $newState ? 'account_activated' : 'account_banned',
+                    $newState ? 'Compte réactivé'   : 'Compte suspendu',
+                    $msg]);
+        }
     }
     if ($action === 'toggle_verified' && $uid) {
         $stmt = $pdo->prepare('SELECT is_verified FROM users WHERE id = ?');
@@ -65,10 +77,12 @@ $offset = ($page - 1) * $perPage;
 
 $stmt = $pdo->prepare("
     SELECT u.*,
+           fp.university, fp.field_of_study,
            (SELECT COUNT(*) FROM projects p WHERE p.client_id = u.id) AS nb_projects,
            (SELECT COUNT(*) FROM postulations po WHERE po.freelancer_id = u.id) AS nb_applications,
            (SELECT balance FROM wallets w WHERE w.user_id = u.id) AS wallet_balance
     FROM users u
+    LEFT JOIN freelancer_profiles fp ON fp.user_id = u.id
     WHERE $whereClause
     ORDER BY u.created_at DESC
     LIMIT $perPage OFFSET $offset
@@ -158,9 +172,7 @@ $totalPages = (int)ceil($total / $perPage);
                         <tr class="hover:bg-slate-50 transition-colors">
                             <td class="px-5 py-3">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center text-sm font-bold text-slate-600 flex-shrink-0">
-                                        <?= mb_substr($u['first_name'], 0, 1) ?>
-                                    </div>
+                                    <?= renderAvatar($u['avatar'] ?? null, $u['first_name'], $u['last_name'], (bool)($u['is_verified'] ?? false), 'w-9 h-9', 'rounded-full') ?>
                                     <div>
                                         <p class="font-medium text-slate-900"><?= h($u['first_name'] . ' ' . $u['last_name']) ?></p>
                                         <p class="text-xs text-slate-400"><?= h($u['email']) ?></p>
@@ -190,9 +202,19 @@ $totalPages = (int)ceil($total / $perPage);
                                     <form method="POST" class="inline">
                                         <input type="hidden" name="action"  value="toggle_active"/>
                                         <input type="hidden" name="user_id" value="<?= $u['id'] ?>"/>
-                                        <button type="submit" title="<?= $u['is_active'] ? 'Bannir' : 'Activer' ?>"
-                                                class="text-xs px-2.5 py-1.5 rounded-lg border transition-colors <?= $u['is_active'] ? 'border-red-200 text-red-600 hover:bg-red-50' : 'border-green-200 text-green-600 hover:bg-green-50' ?>">
-                                            <?= $u['is_active'] ? 'Bannir' : 'Activer' ?>
+                                        <?php
+                                        $confirmMsg = $u['is_active']
+                                            ? 'Bannir ' . $u['first_name'] . ' ' . $u['last_name'] . ' ? Son compte sera désactivé.'
+                                            : 'Réactiver ce compte ?';
+                                        $btnClass = $u['is_active']
+                                            ? 'border-red-200 text-red-600 hover:bg-red-50'
+                                            : 'border-green-200 text-green-600 hover:bg-green-50';
+                                        ?>
+                                        <button type="submit"
+                                                title="<?= $u['is_active'] ? 'Bannir' : 'Activer' ?>"
+                                                onclick="return confirm('<?= htmlspecialchars($confirmMsg, ENT_QUOTES) ?>')"
+                                                class="text-xs px-2.5 py-1.5 rounded-lg border transition-colors <?= $btnClass ?>">
+                                            <?= $u['is_active'] ? '🚫 Bannir' : '✓ Activer' ?>
                                         </button>
                                     </form>
                                     <form method="POST" class="inline">
@@ -213,14 +235,54 @@ $totalPages = (int)ceil($total / $perPage);
 
             <!-- Pagination -->
             <?php if ($totalPages > 1): ?>
-            <div class="flex justify-center gap-2 p-4 border-t border-slate-100">
-                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                <a href="?page=<?= $i ?>&search=<?= urlencode($search) ?>&role=<?= $role ?>"
-                   class="px-3 py-1.5 rounded-lg border text-sm transition-colors <?= $i === $page ? 'bg-slate-900 text-white border-slate-900' : 'border-slate-200 hover:border-slate-300' ?>">
-                    <?= $i ?>
-                </a>
-                <?php endfor; ?>
+            <div class="flex items-center justify-between gap-3 px-5 py-4 border-t border-slate-100 flex-wrap">
+                <p class="text-xs text-slate-500">
+                    <?= ($offset + 1) ?>–<?= min($offset + $perPage, $total) ?> sur <?= $total ?> utilisateur<?= $total > 1 ? 's' : '' ?>
+                </p>
+                <div class="flex items-center gap-1.5" id="admin-pagination"></div>
             </div>
+            <script>
+            (function() {
+                const cur   = <?= $page ?>;
+                const total = <?= $totalPages ?>;
+                const base  = '?search=<?= urlencode($search) ?>&role=<?= urlencode($role) ?>&page=';
+                const wrap  = document.getElementById('admin-pagination');
+                if (!wrap) return;
+
+                function pages(c, t) {
+                    if (t <= 7) { const r=[]; for(let i=1;i<=t;i++) r.push(i); return r; }
+                    const r = [1];
+                    if (c > 3) r.push('...');
+                    for (let i=Math.max(2,c-1); i<=Math.min(t-1,c+1); i++) r.push(i);
+                    if (c < t-2) r.push('...');
+                    r.push(t);
+                    return r;
+                }
+
+                let html = '';
+                // Précédent
+                html += cur > 1
+                    ? '<a href="'+base+(cur-1)+'" class="px-2 py-1.5 rounded-lg border border-slate-200 text-sm hover:bg-slate-50"><span class="material-symbols-outlined text-base">chevron_left</span></a>'
+                    : '<span class="px-2 py-1.5 rounded-lg border border-slate-100 text-slate-300 text-sm"><span class="material-symbols-outlined text-base">chevron_left</span></span>';
+
+                pages(cur, total).forEach(p => {
+                    if (p === '...') {
+                        html += '<span class="px-2 py-1.5 text-slate-400 text-sm">…</span>';
+                    } else if (p === cur) {
+                        html += '<span class="px-3 py-1.5 rounded-lg bg-slate-900 text-white border border-slate-900 text-sm font-semibold">'+p+'</span>';
+                    } else {
+                        html += '<a href="'+base+p+'" class="px-3 py-1.5 rounded-lg border border-slate-200 text-sm hover:border-slate-300">'+p+'</a>';
+                    }
+                });
+
+                // Suivant
+                html += cur < total
+                    ? '<a href="'+base+(cur+1)+'" class="px-2 py-1.5 rounded-lg border border-slate-200 text-sm hover:bg-slate-50"><span class="material-symbols-outlined text-base">chevron_right</span></a>'
+                    : '<span class="px-2 py-1.5 rounded-lg border border-slate-100 text-slate-300 text-sm"><span class="material-symbols-outlined text-base">chevron_right</span></span>';
+
+                wrap.innerHTML = html;
+            })();
+            </script>
             <?php endif; ?>
         </div>
     </main>

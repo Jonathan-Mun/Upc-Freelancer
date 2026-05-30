@@ -224,3 +224,51 @@ function renderStars(float $rating): string {
     $html .= '</span>';
     return $html;
 }
+// ─── Avatar + badge vérifié ───────────────────────────────────
+/**
+ * Affiche l'avatar d'un utilisateur (photo ou initiale) avec
+ * optionnellement le badge "vérifié" en superposition.
+ *
+ * @param string|null $avatar      Chemin relatif stocké en BDD (ex: avatars/xxx.jpg)
+ * @param string      $firstName   Prénom (pour l'initiale de fallback)
+ * @param string      $lastName    Nom
+ * @param bool        $isVerified  Afficher le badge vérifié ?
+ * @param string      $size        Classes Tailwind pour width/height (ex: "w-10 h-10")
+ * @param string      $shape       "rounded-full" ou "rounded-xl"
+ * @param string      $extra       Classes CSS supplémentaires sur le wrapper
+ */
+function renderAvatar(
+    ?string $avatar,
+    string  $firstName,
+    string  $lastName   = '',
+    bool    $isVerified = false,
+    string  $size       = 'w-10 h-10',
+    string  $shape      = 'rounded-full',
+    string  $extra      = ''
+): string {
+    $initiale = mb_strtoupper(mb_substr($firstName, 0, 1));
+    $BASE     = '/upc_freelance';
+
+    if ($avatar) {
+        $img = '<img src="' . $BASE . '/storage/' . h($avatar) . '" alt="Avatar"
+                     class="' . $size . ' ' . $shape . ' object-cover"/>';
+    } else {
+        $img = '<div class="' . $size . ' ' . $shape . ' bg-primary/10 flex items-center justify-center font-bold text-primary text-sm">'
+             . $initiale
+             . '</div>';
+    }
+
+    $badge = '';
+    if ($isVerified) {
+        $badge = '<span class="absolute -bottom-0.5 -right-0.5 bg-white rounded-full leading-none"
+                        title="Compte vérifié">'
+               . '<span class="material-symbols-outlined text-secondary" '
+               . 'style="font-size:14px;font-variation-settings:\'FILL\' 1">verified</span>'
+               . '</span>';
+    }
+
+    return '<div class="relative inline-flex flex-shrink-0 ' . $extra . '">'
+         . $img
+         . $badge
+         . '</div>';
+}
