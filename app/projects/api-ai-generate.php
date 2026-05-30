@@ -1,78 +1,171 @@
 <?php
+// ============================================================
+// UPC FREELANCE — API : Génération de projet par IA (Groq)
+// ../../app/projects/api-ai-generate.php
+// ============================================================
+
+ob_start();
+set_exception_handler(function($e) {
+    ob_clean();
+    header('Content-Type: application/json');
+    echo json_encode(['error' => 'Erreur serveur : ' . $e->getMessage()]);
+    exit;
+});
+
+require_once '../../includes/middleware.php';
+require_once '../../includes/auth.php';
+require_once '../../includes/db.php';
+require_once '../../includes/functions.php';
 require_once '../../includes/ai-config.php';
 
+requireRole('client', 'freelancer');
+ob_clean();
 header('Content-Type: application/json');
 
-$input = json_decode(file_get_contents("php://input"), true);
-$brief = $input['brief'] ?? '';
-
-if (!$brief) {
-    http_response_code(400);
-    echo json_encode(["error" => "Brief manquant"]);
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['error' => 'Méthode non autorisée']);
     exit;
 }
 
-$payload = [
-    "model" => GROQ_MODEL,
-    "messages" => [
-        ["role" => "user", "content" => "Génère un projet freelance basé sur : " . $brief]
-    ],
-    "temperature" => 0.7
-];
+$input = json_decode(file_get_contents('php://input'), true);
+$brief = trim($input['brief'] ?? '');
 
-$ch = curl_init("https://api.groq.com/openai/v1/chat/completions");
+if (empty($brief) || mb_strlen($brief) < 10) {
+    echo json_encode(['error' => 'Décrivez votre projet en au moins 10 caractères.']);
+    exit;
+}
 
-curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_POST => true,
-    CURLOPT_HTTPHEADER => [
-        "Content-Type: application/json",
-        "Authorization: Bearer " . GROQ_API_KEY
-    ],
-    CURLOPT_POSTFIELDS => json_encode($payload),
-]);
+$apiKey = defined('GROQ_API_KEY') ? GROQ_API_KEY : '';
+$model  = defined('GROQ_MODEL')   ? GROQ_MODEL   : 'llama-3.3-70b-versatile';
 
-$response = curl_exec($ch);
+if (empty($apiKey)) {
+    echo json_encode(['error' => 'Clé API Groq non configurée.']);
+    exit;
+}
 
-if ($response === false) {
-    http_response_code(500);
-    echo json_encode([
-        "error" => "Erreur cURL",
-        "details" => curl_error($ch)
+// ── Catégories ───────────────────────────────────────────
+$pdo        = getDB();
+$categories = $pdo->query('SELECT id, name FROM categories WHERE is_active = 1 ORDER BY name')
+                  ->fetchAll(PDO::FETCH_ASSOC);
+$catList    = implode(', ', array_map(fn($c) => $c['name'].' (id:'.$c['id'].')', $categories));
+
+// ── Fonction appel Groq ───────────────────────────────────
+function callGroq(string $apiKey, string $model, string $system, string $user, int $maxTokens = 1024): ?string {
+    $payload = json_encode([
+        'model'       => $model,
+        'messages'    => [
+            ['role' => 'system', 'content' => $system],
+            ['role' => 'user',   'content' => $user],
+        ],
+        'temperature' => 0.7,
+        'max_tokens'  => $maxTokens,
     ]);
+
+    $ch = curl_init('https://api.groq.com/openai/v1/chat/completions');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . $apiKey,
+        ],
+        CURLOPT_POSTFIELDS     => $payload,
+        CURLOPT_TIMEOUT        => 30,
+        CURLOPT_SSL_VERIFYPEER => false,
+    ]);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err      = curl_error($ch);
     curl_close($ch);
+
+    if ($err || $httpCode !== 200) return null;
+
+    $data = json_decode($response, true);
+    return trim($data['choices'][0]['message']['content'] ?? '');
+}
+
+// ── PASSE 1 : Infos structurées (JSON court sans description) ──
+$systemShort = 'Tu es un assistant pour une plateforme freelance ivoirienne. Tu retournes UNIQUEMENT du JSON valide, sans markdown, sans backtick, sans texte avant ou après.';
+
+$promptShort = <<<PROMPT
+Brief : "{$brief}"
+Catégories : {$catList}
+
+Retourne ce JSON (sans aucun texte autour) :
+{
+  "title": "titre du projet max 100 caractères",
+  "skills": ["technologie1", "technologie2", "technologie3", "technologie4"],
+  "budget_min": 50000,
+  "budget_max": 200000,
+  "category_id": 1,
+  "deadline_days": 30,
+  "visibility": "public"
+}
+
+- skills = technologies/langages/outils concrets pour réaliser ce projet (PHP, MySQL, JS, React, Figma, etc.)
+- budgets en Francs CFA, réalistes pour un étudiant freelance ivoirien
+- deadline_days entre 14 et 90
+PROMPT;
+
+$rawShort = callGroq($apiKey, $model, $systemShort, $promptShort, 512);
+
+if (!$rawShort) {
+    echo json_encode(['error' => 'Impossible de joindre l\'API Groq. Réessayez.']);
     exit;
 }
 
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
+// Extraire le JSON
+$rawShort = preg_replace('/```json\s*/i', '', $rawShort);
+$rawShort = preg_replace('/```\s*/i', '', $rawShort);
+$start    = strpos($rawShort, '{');
+$end      = strrpos($rawShort, '}');
+if ($start === false || $end === false) {
+    echo json_encode(['error' => 'L\'IA n\'a pas retourné de JSON valide. Réessayez.']);
+    exit;
+}
+$generated = json_decode(substr($rawShort, $start, $end - $start + 1), true);
 
-// 🔥 IMPORTANT : vérifier réponse vide
-if (empty($response)) {
-    http_response_code(500);
-    echo json_encode(["error" => "Réponse vide de l'API"]);
+if (!$generated || !isset($generated['title'])) {
+    echo json_encode(['error' => 'Données générées invalides. Réessayez.']);
     exit;
 }
 
-// Si erreur API
-if ($httpCode >= 400) {
-    http_response_code($httpCode);
-    echo json_encode([
-        "error" => "Erreur Groq",
-        "raw" => $response
-    ]);
-    exit;
+// ── PASSE 2 : Description longue (texte libre, sans JSON) ──
+$systemDesc = 'Tu es un expert en rédaction de projets freelance pour une plateforme étudiante ivoirienne. Tu rédiges des descriptions professionnelles, détaillées et convaincantes.';
+
+$promptDesc = <<<PROMPT
+Rédige une description détaillée pour ce projet freelance :
+
+Titre : {$generated['title']}
+Brief client : "{$brief}"
+
+La description doit contenir exactement 5 sections séparées par "|||" :
+Section 1 - Contexte : présentation du projet et de son environnement (3 phrases minimum)
+Section 2 - Objectifs : ce que le client veut accomplir précisément (3 phrases minimum)
+Section 3 - Fonctionnalités : liste détaillée de ce qui doit être livré (5 éléments minimum)
+Section 4 - Exigences techniques : contraintes, stack technique, compatibilité (3 phrases minimum)
+Section 5 - Livraison : délais, modalités, critères de validation (3 phrases minimum)
+
+Réponds UNIQUEMENT avec le texte des 5 sections séparées par |||, rien d'autre.
+PROMPT;
+
+$rawDesc = callGroq($apiKey, $model, $systemDesc, $promptDesc, 1500);
+
+if ($rawDesc && strlen($rawDesc) > 50) {
+    // Convertir ||| en doubles sauts de ligne
+    $generated['description'] = str_replace('|||', "\n\n", $rawDesc);
+} else {
+    $generated['description'] = '';
 }
 
-// 🔥 sécurité JSON (évite crash frontend)
-json_decode($response);
-if (json_last_error() !== JSON_ERROR_NONE) {
-    http_response_code(500);
-    echo json_encode([
-        "error" => "Réponse Groq invalide JSON",
-        "raw" => $response
-    ]);
-    exit;
+// ── Calculer deadline ────────────────────────────────────
+if (!empty($generated['deadline_days'])) {
+    $generated['deadline'] = date('Y-m-d', strtotime('+' . (int)$generated['deadline_days'] . ' days'));
+    unset($generated['deadline_days']);
 }
 
-echo $response;
+$generated['_debug_raw'] = $rawDesc;
+$generated['_debug_len'] = strlen($rawDesc ?? '');
+echo json_encode(['ok' => true, 'project' => $generated]);

@@ -8,9 +8,8 @@ require_once '../../includes/middleware.php';
 require_once '../../includes/auth.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/db.php';
-require_once '../../includes/ai-config.php';
 
-requireRole('client', 'freelancer'); // Seuls les clients peuvent créer des projets, mais on peut autoriser les freelancers à tester la création aussi
+requireRole('client', 'freelancer');
 
 $pdo    = getDB();
 $user   = currentUser();
@@ -71,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Projet privé : notifier le client avec le lien de partage
         if ($visibility === 'private') {
             $shareLink = '/upc_freelance/app/projects/details.php?id=' . $projectId . '&token=' . $uuid;
-            createNotification(
+            sendNotification(
                 $user['id'],
                 'contract_created',
                 'Projet privé créé',
@@ -257,7 +256,7 @@ require_once '../../includes/header.php';
 
                 <div>
                     <label class="block text-sm font-medium text-primary mb-1.5">Description détaillée <span class="text-red-500">*</span></label>
-                    <textarea name="description" rows="6" required
+                    <textarea name="description" id="proj-description" rows="6" required
                               placeholder="Décrivez votre projet en détail : objectifs, livrables attendus, contraintes, contexte..."
                               class="w-full px-4 py-3 rounded-xl border border-outline-variant focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none text-sm transition-all resize-y"><?= h($_POST['description'] ?? '') ?></textarea>
                 </div>
@@ -490,11 +489,7 @@ function chooseMode(mode) {
     }
 }
 
-// ── Génération IA (appel Gemini direct depuis le navigateur) ─
-const GROQ_KEY = '<?= defined("GROQ_API_KEY") ? GROQ_API_KEY : "" ?>';
-const GROQ_MODEL = '<?= defined("GROQ_MODEL") ? GROQ_MODEL : "" ?>';
-const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
-
+// ── Génération IA (via API PHP → Anthropic) ──────────────
 async function generateWithAI() {
     const brief    = document.getElementById('ai-brief').value.trim();
     const btn      = document.getElementById('ai-btn');
@@ -510,110 +505,36 @@ async function generateWithAI() {
         return;
     }
 
-    if (!GROQ_KEY) {
-        errorTxt.textContent = 'Clé API non configurée dans ai-config.php.';
-        errorBox.classList.remove('hidden');
-        return;
-    }
-
     errorBox.classList.add('hidden');
     regen.classList.add('hidden');
     loading.classList.remove('hidden');
     btn.disabled = true;
     btnText.textContent = 'Génération...';
 
-    const categories = <?= json_encode(array_map(fn($c) => ['id' => $c['id'], 'name' => $c['name']], getDB()->query('SELECT id, name FROM categories WHERE is_active = 1 ORDER BY name')->fetchAll(PDO::FETCH_ASSOC))) ?>;
-    const catList = categories.map(c => `"${c.name}" (id:${c.id})`).join(', ');
+    try {
+        const res  = await fetch('/upc_freelance/app/projects/api-ai-generate.php', {
+            method:      'POST',
+            headers:     { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body:        JSON.stringify({ brief })
+        });
+        const data = await res.json();
 
-    const prompt = `Tu es un assistant expert en rédaction de projets freelance pour une plateforme étudiante ivoirienne.
+        if (data.error) {
+            errorTxt.textContent = data.error;
+            errorBox.classList.remove('hidden');
+            return;
+        }
 
-L'utilisateur décrit son besoin en quelques lignes. Génère un projet complet et professionnel.
-
-Brief de l'utilisateur :
-"${brief}"
-
-Catégories disponibles : ${catList}
-
-Réponds UNIQUEMENT en JSON valide (sans markdown, sans backticks), avec exactement cette structure :
-{
-  "title": "Titre accrocheur et précis (max 100 caractères)",
-  "description": "Description détaillée du projet sur 3-5 paragraphes",
-  "skills": ["compétence1", "compétence2", "compétence3"],
-  "budget_min": 50000,
-  "budget_max": 150000,
-  "category_id": 1,
-  "deadline_days": 30,
-  "visibility": "public"
-}
-
-Règles :
-- Budgets en Francs CFA (XOF), fourchette réaliste pour un étudiant freelance en Côte d'Ivoire
-- deadline_days entre 7 et 90
-- skills = 3 à 6 compétences précises
-- category_id parmi les ids disponibles ci-dessus
-- visibility = "public" ou "private"
-- Réponds UNIQUEMENT avec le JSON, rien d'autre`;
-
- try {
-    const res = await fetch('/upc_freelance/app/projects/api-ai-generate.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ brief })
-    });
-
-    const data = await res.json();
-
-    console.log("FULL RESPONSE:", data);
-
-    // 1. vérifier erreur API
-    if (!data?.choices?.[0]?.message?.content) {
-        throw new Error(
-            data?.error?.message || "Réponse IA invalide (structure inattendue)"
-        );
-    }
-
-    // 2. récupérer texte brut
-    let text = data.choices[0].message.content;
-
-    // 3. nettoyage anti markdown
-    text = text
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
-        .trim();
-
-    // 4. extraire JSON
-    const start = text.indexOf('{');
-    const end = text.lastIndexOf('}');
-
-    if (start === -1 || end === -1) {
-        throw new Error("JSON introuvable dans la réponse IA");
-    }
-
-    const json = JSON.parse(text.slice(start, end + 1));
-
-    // deadline
-    if (project.deadline_days) {
-        const d = new Date();
-        d.setDate(d.getDate() + parseInt(project.deadline_days));
-        project.deadline = d.toISOString().split('T')[0];
-        delete project.deadline_days;
-    }
-
-    fillForm(project);
-
-    document.getElementById('main-form').classList.remove('hidden');
-    document.getElementById('mode-badge').classList.remove('hidden');
-    document.getElementById('ai-regen').classList.remove('hidden');
-
-    document.getElementById('main-form')
-        .scrollIntoView({ behavior: 'smooth', block: 'start' });
+        fillForm(data.project);
+        // main-form déjà rendu visible dans fillForm()
+        document.getElementById('mode-badge').classList.remove('hidden');
+        regen.classList.remove('hidden');
+        setTimeout(() => document.getElementById('main-form').scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
 
     } catch (e) {
-        console.error("AI ERROR:", e);
-
-        errorTxt.textContent = 'Erreur : ' + e.message;
+        errorTxt.textContent = 'Erreur réseau : ' + e.message;
         errorBox.classList.remove('hidden');
-
     } finally {
         loading.classList.add('hidden');
         btn.disabled = false;
@@ -622,52 +543,72 @@ Règles :
 }
 
 function fillForm(p) {
-    // Titre
-    const titleEl = document.querySelector('[name="title"]');
-    if (titleEl && p.title) titleEl.value = p.title;
+    // Rendre le formulaire visible AVANT de remplir les champs
+    // pour que querySelector trouve bien les éléments du DOM
+    const mainForm = document.getElementById('main-form');
+    mainForm.classList.remove('hidden');
 
-    // Description
-    const descEl = document.querySelector('[name="description"]');
-    if (descEl && p.description) descEl.value = p.description;
+    // Petit délai pour laisser le DOM se mettre à jour
+    setTimeout(() => {
+        // Titre
+        const titleEl = document.querySelector('[name="title"]');
+        if (titleEl && p.title) titleEl.value = p.title;
 
-    // Compétences
-    const skillEl = document.getElementById('skills-input');
-    if (skillEl && p.skills) {
-        skillEl.value = Array.isArray(p.skills) ? p.skills.join(', ') : p.skills;
-        renderTags();
-    }
+        // Description — convertir \n en vrais sauts de ligne
+        const descEl = document.getElementById('proj-description');
+        if (descEl) {
+            descEl.value = p.description;
 
-    // Budget min
-    const bMinEl = document.getElementById('budget_min');
-    if (bMinEl && p.budget_min) bMinEl.value = p.budget_min;
 
-    // Budget max
-    const bMaxEl = document.getElementById('budget_max');
-    if (bMaxEl && p.budget_max) bMaxEl.value = p.budget_max;
 
-    // Date limite
-    const deadEl = document.querySelector('[name="deadline"]');
-    if (deadEl && p.deadline) deadEl.value = p.deadline;
+        }
 
-    // Catégorie
-    const catEl = document.querySelector('[name="category_id"]');
-    if (catEl && p.category_id) catEl.value = p.category_id;
+        // Compétences
+        const skillEl = document.getElementById('skills-input');
+        if (skillEl && p.skills) {
+            skillEl.value = Array.isArray(p.skills) ? p.skills.join(', ') : p.skills;
+            renderTags();
+            // Déclencher l'event pour mettre à jour les tags visuels
+            skillEl.dispatchEvent(new Event('input'));
+        }
 
-    // Visibilité
-    if (p.visibility) {
-        const radios = document.querySelectorAll('[name="visibility"]');
-        radios.forEach(r => {
-            r.checked = (r.value === p.visibility);
-            r.closest('label').classList.toggle('border-secondary', r.checked);
-            r.closest('label').classList.toggle('bg-secondary/5', r.checked);
-        });
-        // Afficher bloc privé si besoin
-        document.getElementById('private-link-info')
-            ?.classList.toggle('hidden', p.visibility !== 'private');
-    }
+        // Budget min
+        const bMinEl = document.getElementById('budget_min');
+        if (bMinEl && p.budget_min) {
+            bMinEl.value = p.budget_min;
+            bMinEl.dispatchEvent(new Event('input'));
+        }
 
-    // Valider budgets
-    checkBudget();
+        // Budget max
+        const bMaxEl = document.getElementById('budget_max');
+        if (bMaxEl && p.budget_max) {
+            bMaxEl.value = p.budget_max;
+            bMaxEl.dispatchEvent(new Event('input'));
+        }
+
+        // Date limite
+        const deadEl = document.querySelector('[name="deadline"]');
+        if (deadEl && p.deadline) deadEl.value = p.deadline;
+
+        // Catégorie
+        const catEl = document.querySelector('[name="category_id"]');
+        if (catEl && p.category_id) catEl.value = String(p.category_id);
+
+        // Visibilité
+        if (p.visibility) {
+            const radios = document.querySelectorAll('[name="visibility"]');
+            radios.forEach(r => {
+                r.checked = (r.value === p.visibility);
+                r.closest('label').classList.toggle('border-secondary', r.checked);
+                r.closest('label').classList.toggle('bg-secondary/5', r.checked);
+            });
+            document.getElementById('private-link-info')
+                ?.classList.toggle('hidden', p.visibility !== 'private');
+        }
+
+        // Valider budgets
+        checkBudget();
+    }, 50);
 }
 </script>
 
