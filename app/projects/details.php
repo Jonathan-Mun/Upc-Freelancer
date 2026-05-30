@@ -41,8 +41,10 @@ $skills = $project['skills_needed'] ? json_decode($project['skills_needed'], tru
 
 // Postulations
 $user     = currentUser();
-$isOwner  = $user && $user['id'] === $project['client_id'];
-$hasApplied = false;
+$isOwner      = $user && $user['id'] === $project['client_id'];
+// Un freelancer ne peut pas postuler sur son propre projet (s'il a les deux rôles)
+$isOwnProject = $user && $user['id'] === $project['client_id'];
+$hasApplied   = false;
 
 if ($user && $user['role'] === 'freelancer') {
     $stmt = $pdo->prepare('SELECT id FROM postulations WHERE project_id = ? AND freelancer_id = ?');
@@ -77,19 +79,21 @@ $stmtCount->execute([$projectId]);
 $postulationCount = (int)$stmtCount->fetchColumn();
 
 // 3 derniers postulants (sidebar) — visibles par tous
+// On récupère TOUS les postulants pour la popup (pas de LIMIT)
 $stmt = $pdo->prepare('
     SELECT po.id, po.proposed_price, po.proposed_days, po.status, po.created_at,
-           u.first_name, u.last_name, u.avatar, u.is_verified,
-           fp.title AS freelancer_title, fp.rating
+           po.cover_letter,
+           u.id AS freelancer_id, u.first_name, u.last_name, u.avatar, u.is_verified,
+           fp.title AS freelancer_title, fp.rating, fp.total_reviews, fp.skills, fp.field_of_study
     FROM postulations po
     JOIN users u ON u.id = po.freelancer_id
     LEFT JOIN freelancer_profiles fp ON fp.user_id = u.id
     WHERE po.project_id = ?
     ORDER BY po.created_at DESC
-    LIMIT 3
 ');
 $stmt->execute([$projectId]);
-$lastPostulants = $stmt->fetchAll();
+$allPostulants  = $stmt->fetchAll();
+$lastPostulants = array_slice($allPostulants, 0, 3);
 
 $pageTitle = h($project['title']) . ' — UPC Freelance';
 $appLayout = true;
@@ -206,7 +210,7 @@ require_once '../../includes/header.php';
         <?php endif; ?>
 
         <!-- Formulaire postulation (freelancer) -->
-        <?php if ($user && $user['role'] === 'freelancer' && $project['status'] === 'open'): ?>
+        <?php if ($user && $user['role'] === 'freelancer' && $project['status'] === 'open' && !$isOwnProject): ?>
         <div class="bg-white rounded-2xl border border-slate-100 p-6 custom-shadow-low">
             <?php if ($hasApplied): ?>
             <div class="text-center py-6">
@@ -333,12 +337,14 @@ require_once '../../includes/header.php';
                         <?= $postulationCount ?>
                     </span>
                 </h3>
-                <a href="/upc_freelance/app/postulations/received.php?project_id=<?= $projectId ?>"
-                   class="text-xs text-secondary hover:underline font-medium">
+                <?php if ($postulationCount > 3): ?>
+                <button onclick="openPopup()" class="text-xs text-secondary hover:underline font-medium">
                     Voir toutes →
-                </a>
+                </button>
+                <?php endif; ?>
             </div>
 
+            <!-- 3 derniers -->
             <div class="space-y-3">
                 <?php foreach ($lastPostulants as $lp):
                     $lpColors = [
@@ -349,8 +355,9 @@ require_once '../../includes/header.php';
                     ];
                     $lpStatus = $lpColors[$lp['status']] ?? ['bg-slate-100','text-slate-500',$lp['status']];
                 ?>
-                <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100
-                            hover:border-secondary/30 transition-colors">
+                <a href="/upc_freelance/app/profile/freelancer-profile.php?id=<?= $lp['freelancer_id'] ?>"
+                   class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100
+                          hover:border-secondary/40 hover:bg-blue-50/30 transition-all cursor-pointer">
                     <?= renderAvatar($lp['avatar'] ?? null, $lp['first_name'], $lp['last_name'], (bool)($lp['is_verified'] ?? false), 'w-9 h-9', 'rounded-full') ?>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-semibold text-primary truncate flex items-center gap-1">
@@ -379,22 +386,166 @@ require_once '../../includes/header.php';
                         </span>
                         <?php endif; ?>
                     </div>
-                </div>
+                </a>
                 <?php endforeach; ?>
             </div>
 
-            <?php if ($isOwner): ?>
-            <a href="/upc_freelance/app/postulations/received.php?project_id=<?= $projectId ?>"
-               class="mt-4 flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl
-                      <?= $postulationCount > 3 ? 'bg-secondary text-white hover:opacity-90' : 'border border-secondary text-secondary hover:bg-secondary/5' ?>
-                      text-sm font-semibold transition-all active:scale-95">
+            <!-- Bouton ouvrir popup -->
+            <button onclick="openPopup()"
+                    class="mt-4 flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl
+                           border border-secondary text-secondary text-sm font-semibold
+                           hover:bg-secondary/5 transition-colors active:scale-95">
                 <span class="material-symbols-outlined text-base">people</span>
-                <?= $postulationCount > 3
-                    ? 'Voir les ' . $postulationCount . ' candidatures'
-                    : 'Gérer les candidatures' ?>
-            </a>
-            <?php endif; ?>
+                Voir les <?= $postulationCount ?> candidature<?= $postulationCount > 1 ? 's' : '' ?>
+            </button>
         </div>
+        <?php endif; ?>
+
+        <!-- ══ POPUP : tous les postulants ══════════════════ -->
+        <?php if (!empty($allPostulants)): ?>
+        <div id="popup-postulants"
+             class="fixed inset-0 z-50 hidden"
+             onclick="if(event.target===this) closePopup()">
+            <!-- Backdrop -->
+            <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+
+            <!-- Panel -->
+            <div class="absolute inset-y-0 right-0 w-full max-w-lg bg-white shadow-2xl flex flex-col"
+                 style="animation: slideIn 0.25s ease">
+                <!-- Header popup -->
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                    <div>
+                        <h2 class="font-bold text-primary text-lg">Candidatures</h2>
+                        <p class="text-xs text-slate-400">
+                            <?= $postulationCount ?> freelancer<?= $postulationCount > 1 ? 's' : '' ?>
+                            ont postulé à ce projet
+                        </p>
+                    </div>
+                    <button onclick="closePopup()"
+                            class="p-2 rounded-xl hover:bg-slate-100 transition-colors text-slate-500">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
+                </div>
+
+                <!-- Liste scrollable -->
+                <div class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                    <?php foreach ($allPostulants as $ap):
+                        $apColors = [
+                            'pending'   => ['#fef3c7','#b45309','En attente'],
+                            'accepted'  => ['#dcfce7','#15803d','Accepté'],
+                            'rejected'  => ['#fee2e2','#dc2626','Refusé'],
+                            'withdrawn' => ['#f1f5f9','#64748b','Retiré'],
+                        ];
+                        $apStatus = $apColors[$ap['status']] ?? ['#f1f5f9','#64748b',$ap['status']];
+                        $apSkills = $ap['skills'] ? json_decode($ap['skills'], true) : [];
+                    ?>
+                    <a href="/upc_freelance/app/profile/freelancer-profile.php?id=<?= $ap['freelancer_id'] ?>"
+                       class="block rounded-2xl border border-slate-100 bg-white p-4
+                              hover:border-secondary/40 hover:shadow-md transition-all group">
+
+                        <!-- Ligne 1 : avatar + nom + badge vérifié + prix -->
+                        <div class="flex items-start gap-3 mb-3">
+                            <?= renderAvatar($ap['avatar'] ?? null, $ap['first_name'], $ap['last_name'], (bool)($ap['is_verified'] ?? false), 'w-11 h-11', 'rounded-xl') ?>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <p class="font-bold text-primary text-sm group-hover:text-secondary transition-colors">
+                                        <?= h($ap['first_name'] . ' ' . $ap['last_name']) ?>
+                                    </p>
+                                    <?php if ($ap['is_verified']): ?>
+                                    <span class="inline-flex items-center gap-0.5 bg-blue-50 text-secondary
+                                                 text-[10px] font-bold px-1.5 py-0.5 rounded-full border border-blue-100">
+                                        <span class="material-symbols-outlined"
+                                              style="font-size:11px;font-variation-settings:'FILL' 1">verified</span>
+                                        Vérifié
+                                    </span>
+                                    <?php endif; ?>
+                                </div>
+                                <p class="text-xs text-slate-400 truncate">
+                                    <?= $ap['freelancer_title'] ? h($ap['freelancer_title']) : 'Freelancer' ?>
+                                    <?= $ap['field_of_study'] ? ' · ' . h($ap['field_of_study']) : '' ?>
+                                </p>
+                                <?php if ($ap['rating']): ?>
+                                <div class="flex items-center gap-1 mt-0.5">
+                                    <?= renderStars((float)$ap['rating']) ?>
+                                    <span class="text-[10px] text-slate-400">
+                                        (<?= $ap['total_reviews'] ?> avis)
+                                    </span>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            <!-- Prix + délai -->
+                            <div class="text-right flex-shrink-0">
+                                <p class="font-bold text-secondary text-sm"><?= money((float)$ap['proposed_price']) ?></p>
+                                <?php if ($ap['proposed_days']): ?>
+                                <p class="text-[10px] text-slate-400"><?= $ap['proposed_days'] ?> jours</p>
+                                <?php endif; ?>
+                                <?php if ($isOwner): ?>
+                                <span class="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded-full"
+                                      style="background:<?= $apStatus[0] ?>;color:<?= $apStatus[1] ?>">
+                                    <?= $apStatus[2] ?>
+                                </span>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+
+                        <!-- Skills -->
+                        <?php if (!empty($apSkills)): ?>
+                        <div class="flex flex-wrap gap-1.5 mb-2">
+                            <?php foreach (array_slice($apSkills, 0, 4) as $sk): ?>
+                            <span class="text-[10px] font-semibold bg-surface-container text-secondary
+                                         px-2 py-0.5 rounded-full">
+                                <?= h($sk) ?>
+                            </span>
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+
+                        <!-- Extrait du message -->
+                        <?php if ($ap['cover_letter']): ?>
+                        <p class="text-xs text-slate-500 italic border-l-2 border-secondary/30 pl-2.5 leading-relaxed line-clamp-2">
+                            "<?= h(truncate($ap['cover_letter'], 140)) ?>"
+                        </p>
+                        <?php endif; ?>
+
+                        <!-- Voir profil -->
+                        <div class="mt-3 flex items-center gap-1 text-xs font-semibold text-secondary
+                                    group-hover:gap-2 transition-all">
+                            <span class="material-symbols-outlined text-sm">person</span>
+                            Voir le profil
+                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+
+                <?php if ($isOwner): ?>
+                <!-- Footer owner : lien vers received.php -->
+                <div class="px-4 py-4 border-t border-slate-100">
+                    <a href="/upc_freelance/app/postulations/received.php?project_id=<?= $projectId ?>"
+                       class="flex items-center justify-center gap-2 w-full py-3 rounded-xl
+                              bg-primary text-white text-sm font-semibold
+                              hover:opacity-90 transition-opacity active:scale-95">
+                        <span class="material-symbols-outlined text-base">manage_accounts</span>
+                        Gérer les candidatures
+                    </a>
+                </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <style>
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to   { transform: translateX(0);    opacity: 1; }
+        }
+        @keyframes slideOut {
+            from { transform: translateX(0);    opacity: 1; }
+            to   { transform: translateX(100%); opacity: 0; }
+        }
+        #popup-postulants.closing > div:last-child {
+            animation: slideOut 0.2s ease forwards;
+        }
+        </style>
         <?php endif; ?>
 
         <!-- Actions client (propriétaire) -->
@@ -408,6 +559,49 @@ require_once '../../includes/header.php';
         <?php endif; ?>
     </div>
 </div>
+
+<script>
+// ── Copier le lien de partage ─────────────────────────────
+function copyShareLink() {
+    const input = document.getElementById('share-link');
+    const btn   = document.getElementById('copy-btn');
+    if (!input) return;
+    input.select();
+    navigator.clipboard.writeText(input.value).then(() => {
+        btn.innerHTML = '<span class="material-symbols-outlined text-sm">check</span> Copié !';
+        btn.style.color = '#16a34a';
+        setTimeout(() => {
+            btn.innerHTML = '<span class="material-symbols-outlined text-sm">content_copy</span> Copier';
+            btn.style.color = '';
+        }, 2000);
+    });
+}
+
+// ── Popup candidatures ────────────────────────────────────
+function openPopup() {
+    const popup = document.getElementById('popup-postulants');
+    if (!popup) return;
+    popup.classList.remove('hidden', 'closing');
+    document.body.style.overflow = 'hidden';
+    document.addEventListener('keydown', onEscapePopup);
+}
+
+function closePopup() {
+    const popup = document.getElementById('popup-postulants');
+    if (!popup) return;
+    popup.classList.add('closing');
+    setTimeout(() => {
+        popup.classList.add('hidden');
+        popup.classList.remove('closing');
+        document.body.style.overflow = '';
+    }, 220);
+    document.removeEventListener('keydown', onEscapePopup);
+}
+
+function onEscapePopup(e) {
+    if (e.key === 'Escape') closePopup();
+}
+</script>
 
 <?php
 $appLayout = true;
