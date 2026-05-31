@@ -191,15 +191,27 @@ function countUnreadNotifications(int $userId): int {
 }
 
 function countUnreadMessages(int $userId): int {
-    $stmt = getDB()->prepare('
+    $db = getDB();
+    // Messages contrat non lus
+    $s1 = $db->prepare('
         SELECT COUNT(*) FROM messages m
         JOIN contracts c ON c.id = m.contract_id
         WHERE (c.client_id = ? OR c.freelancer_id = ?)
           AND m.sender_id != ?
           AND m.is_read = 0
     ');
-    $stmt->execute([$userId, $userId, $userId]);
-    return (int) $stmt->fetchColumn();
+    $s1->execute([$userId, $userId, $userId]);
+    $contractUnread = (int)$s1->fetchColumn();
+
+    // Messages directs non lus (table peut ne pas exister encore)
+    $dmUnread = 0;
+    try {
+        $s2 = $db->prepare('SELECT COUNT(*) FROM direct_messages WHERE receiver_id = ? AND is_read = 0');
+        $s2->execute([$userId]);
+        $dmUnread = (int)$s2->fetchColumn();
+    } catch (\Throwable $e) {}
+
+    return $contractUnread + $dmUnread;
 }
 
 // ─── Redirection ──────────────────────────────────────────────
