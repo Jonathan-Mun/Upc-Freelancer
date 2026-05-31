@@ -80,7 +80,11 @@ function callGroq(string $apiKey, string $model, string $system, string $user, i
     $err      = curl_error($ch);
     curl_close($ch);
 
-    if ($err || $httpCode !== 200) return null;
+    if ($err || $httpCode !== 200) {
+        // Retourner un marqueur d'erreur lisible plutôt que null
+        error_log("Groq error - HTTP: $httpCode | cURL: $err | Response: " . substr($response ?? '', 0, 200));
+        return '__ERROR__:' . $httpCode . ':' . $err . ':' . substr($response ?? '', 0, 200);
+    }
 
     $data = json_decode($response, true);
     return trim($data['choices'][0]['message']['content'] ?? '');
@@ -111,8 +115,15 @@ PROMPT;
 
 $rawShort = callGroq($apiKey, $model, $systemShort, $promptShort, 512);
 
-if (!$rawShort) {
-    echo json_encode(['error' => 'Impossible de joindre l\'API Groq. Réessayez.']);
+if (!$rawShort || str_starts_with($rawShort, '__ERROR__')) {
+    $parts = $rawShort ? explode(':', $rawShort, 4) : [];
+    echo json_encode([
+        'error'      => 'Impossible de joindre l\'API Groq.',
+        'http_code'  => $parts[1] ?? 'N/A',
+        'curl_error' => $parts[2] ?? 'N/A',
+        'response'   => $parts[3] ?? 'N/A',
+        'key_ok'     => !empty($apiKey),
+    ]);
     exit;
 }
 
@@ -142,12 +153,32 @@ Titre : {$generated['title']}
 Brief client : "{$brief}"
 
 La description doit contenir exactement 5 sections séparées par "|||" :
-Section 1 - Contexte : présentation du projet et de son environnement (3 phrases minimum)
-Section 2 - Objectifs : ce que le client veut accomplir précisément (3 phrases minimum)
-Section 3 - Fonctionnalités : liste détaillée de ce qui doit être livré (5 éléments minimum)
-Section 4 - Exigences techniques : contraintes, stack technique, compatibilité (3 phrases minimum)
-Section 5 - Livraison : délais, modalités, critères de validation (3 phrases minimum)
 
+Paragraphe 1 :
+Présente le contexte du projet, son utilité et son environnement.
+
+Paragraphe 2 :
+Explique les objectifs recherchés par le client.
+
+Paragraphe 3 :
+Décris en détail les fonctionnalités attendues (au moins 5 fonctionnalités).
+
+Paragraphe 4 :
+Présente les exigences techniques, contraintes et compatibilités.
+
+Paragraphe 5 :
+Décris les modalités de livraison, les délais et les critères de validation.
+
+IMPORTANT :
+- N'écris jamais de titre, sous-titre ou nom de section.
+- N'écris jamais "Section 1", "Contexte", "Objectifs", "Fonctionnalités", "Exigences techniques" ou "Livraison".
+- Chaque partie doit commencer directement par une phrase naturelle comme dans un cahier des charges rédigé par un humain.
+- Sépare uniquement les 5 paragraphes avec "|||".
+- Ne mets aucun texte avant le premier paragraphe.
+- Ne mets aucun texte après le cinquième paragraphe.
+- Toute la description doit être rédigée à la première personne, comme si le client écrivait lui-même son besoin.
+- N'écris jamais comme un observateur ou un rédacteur externe décrivant le projet.
+- La description doit donner l'impression qu'elle a été rédigée directement par le porteur du projet.
 Réponds UNIQUEMENT avec le texte des 5 sections séparées par |||, rien d'autre.
 PROMPT;
 

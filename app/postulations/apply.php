@@ -31,6 +31,12 @@ if (!$project) {
     redirect('../../app/projects/list.php');
 }
 
+// Vérifier que le freelancer n'est pas le propriétaire du projet
+if ($project['client_id'] === $user['id']) {
+    flash('error', 'Vous ne pouvez pas postuler à votre propre projet.');
+    redirect('../../app/projects/details.php?id=' . $projectId);
+}
+
 // Vérifier pas déjà postulé
 $stmt = $pdo->prepare('SELECT id FROM postulations WHERE project_id = ? AND freelancer_id = ?');
 $stmt->execute([$projectId, $user['id']]);
