@@ -209,6 +209,29 @@ CREATE TABLE `messages` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
+-- UPC FREELANCE — Messages directs (hors contrat)
+-- À exécuter UNE SEULE FOIS
+-- ============================================================
+
+USE `upc_freelance`;
+
+CREATE TABLE IF NOT EXISTS `direct_messages` (
+    `id`          INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    `sender_id`   INT UNSIGNED  NOT NULL,
+    `receiver_id` INT UNSIGNED  NOT NULL,
+    `body`        TEXT          NOT NULL,
+    `is_read`     TINYINT(1)    NOT NULL DEFAULT 0,
+    `created_at`  DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    INDEX `idx_dm_sender`   (`sender_id`),
+    INDEX `idx_dm_receiver` (`receiver_id`),
+    INDEX `idx_dm_conv`     (`sender_id`, `receiver_id`),
+    CONSTRAINT `fk_dm_sender`   FOREIGN KEY (`sender_id`)   REFERENCES `users`(`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_dm_receiver` FOREIGN KEY (`receiver_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- ============================================================
 -- TABLE : wallets
 -- ============================================================
 CREATE TABLE `wallets` (
