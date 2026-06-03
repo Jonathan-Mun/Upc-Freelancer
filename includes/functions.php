@@ -74,7 +74,7 @@ function truncate(string $text, int $length = 120): string {
 
 // ─── Upload fichiers ──────────────────────────────────────────
 function uploadFile(array $file, string $folder, array $allowed = ['jpg','jpeg','png','pdf'], int $maxMb = 5): string|false {
-    $uploadDir = '/var/www/html/upc_freelance/storage/' . $folder . '/';
+    $uploadDir = '../storage/' . $folder . '/';
     if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
@@ -86,7 +86,7 @@ function uploadFile(array $file, string $folder, array $allowed = ['jpg','jpeg',
     $mime  = finfo_file($finfo, $file['tmp_name']);
     finfo_close($finfo);
 
-    $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+    $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'application/pdf'];
     if (!in_array($mime, $allowedMimes)) return false;
 
     $filename = generateToken(32) . '.' . $ext;

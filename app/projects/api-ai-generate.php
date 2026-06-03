@@ -101,8 +101,8 @@ Retourne ce JSON (sans aucun texte autour) :
 {
   "title": "titre du projet max 100 caractères",
   "skills": ["technologie1", "technologie2", "technologie3", "technologie4"],
-  "budget_min": 50000,
-  "budget_max": 200000,
+  "budget_min": 10,
+  "budget_max": 5000,
   "category_id": 1,
   "deadline_days": 30,
   "visibility": "public"

@@ -53,11 +53,11 @@ require_once '../includes/header.php';
                 Connecte-toi avec des clients qui ont besoin de ton talent. Postule, collabore, sois payé — en toute sécurité.
             </p>
             <div class="flex flex-wrap gap-4 pt-2">
-                <a href="public/register.php?role=freelancer"
+                <a href="register.php?role=freelancer"
                    class="bg-secondary text-on-secondary font-button text-button px-8 py-4 rounded-xl shadow-sm hover:shadow-md hover:opacity-90 transition-all active:scale-95">
                     Je suis freelance
                 </a>
-                <a href="public/register.php?role=client"
+                <a href="register.php?role=freelancer"
                    class="bg-white text-secondary border-2 border-secondary font-button text-button px-8 py-4 rounded-xl hover:bg-secondary/5 transition-colors active:scale-95">
                     Je cherche du talent
                 </a>
@@ -205,7 +205,7 @@ require_once '../includes/header.php';
     <div class="max-w-3xl mx-auto px-8 text-center">
         <h2 class="font-h2 text-h2 text-white mb-4">Prêt à te lancer ?</h2>
         <p class="text-blue-200 font-body-lg mb-8">Rejoins des milliers d'étudiants qui monétisent leurs compétences dès aujourd'hui.</p>
-        <a href="public/register.php"
+        <a href="register.php"
            class="inline-block bg-white text-primary font-button text-button px-10 py-4 rounded-xl hover:bg-blue-50 transition-colors shadow-lg active:scale-95">
             Créer mon compte gratuitement
         </a>
