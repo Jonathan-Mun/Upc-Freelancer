@@ -73,6 +73,37 @@ require_once '../../includes/header.php';
 
 <?php renderFlash(); ?>
 
+<style>
+.chat-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 200px);
+    min-height: 480px;
+    max-height: 760px;
+}
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scroll-behavior: smooth;
+}
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-track { background: transparent; }
+.chat-messages::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+.chat-footer {
+    flex-shrink: 0;
+    border-top: 1px solid #f1f5f9;
+    background: white;
+}
+@media (max-width: 1023px) {
+    .chat-wrapper {
+        height: calc(100dvh - 180px);
+        max-height: none;
+    }
+}
+</style>
+
 <!-- Retour -->
 <a href="/upc_freelance/app/messages/inbox.php?tab=direct"
    class="inline-flex items-center gap-1 text-sm text-secondary hover:underline mb-6">
@@ -81,8 +112,7 @@ require_once '../../includes/header.php';
 
 <div class="max-w-3xl mx-auto">
     <!-- ── Chat direct ──────────────────────────────────────── -->
-    <div class="bg-white rounded-2xl border border-slate-100 custom-shadow-low overflow-hidden flex flex-col"
-         style="min-height:600px;">
+    <div class="bg-white rounded-2xl border border-slate-100 custom-shadow-low overflow-hidden chat-wrapper">
 
         <!-- Header -->
         <div class="flex items-center gap-4 px-5 py-4 border-b border-slate-100">
@@ -116,7 +146,7 @@ require_once '../../includes/header.php';
         </div>
 
         <!-- Messages -->
-        <div class="flex-1 overflow-y-auto p-5 space-y-4" id="dm-container">
+        <div class="chat-messages p-5 space-y-4" id="dm-container">
             <?php if (empty($messages)): ?>
             <div class="text-center py-12" id="dm-empty">
                 <span class="material-symbols-outlined text-4xl text-slate-300 block mb-3">chat_bubble</span>
@@ -155,19 +185,19 @@ require_once '../../includes/header.php';
         </div>
 
         <!-- Saisie -->
-        <div class="border-t border-slate-100 p-4">
+        <div class="chat-footer px-4 py-4">
             <form id="dm-form" class="flex gap-3">
                 <?= csrfField() ?>
                 <input type="hidden" name="send_dm" value="1"/>
                 <input type="text" name="body" id="dm-input"
                        placeholder="Écrire un message à <?= h($partner['first_name']) ?>..."
                        required autocomplete="off"
-                       class="flex-1 px-4 py-2.5 rounded-xl border border-outline-variant
+                       class="flex-1 px-4 py-2.5 rounded-full border border-outline-variant
                               focus:border-secondary focus:ring-2 focus:ring-secondary/20
-                              outline-none text-sm transition-all"/>
+                              outline-none text-sm transition-all bg-surface-container-low"/>
                 <button type="submit" id="dm-send"
-                        class="bg-primary text-white px-4 py-2.5 rounded-xl hover:opacity-90
-                               transition-opacity active:scale-95">
+                        class="w-10 h-10 bg-primary text-white rounded-full flex items-center justify-center
+                               hover:opacity-90 transition-opacity active:scale-95 flex-shrink-0">
                     <span class="material-symbols-outlined">send</span>
                 </button>
             </form>
@@ -256,7 +286,7 @@ require_once '../../includes/header.php';
             appendMessages(await res.json());
         } catch(e) {}
     }
-    setInterval(poll, 3000);
+    setInterval(poll, 500);
 
     // Envoi AJAX
     form.addEventListener('submit', async (e) => {
