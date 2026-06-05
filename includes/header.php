@@ -170,6 +170,9 @@ tailwind.config = {
     transform: translateX(0);
 }
 </style>
+<?php if ($user): ?>
+    <script src="<?= $BASE ?>/app/notifications/notify-client.js" defer></script>
+<?php endif; ?>
 </head>
 
 <?php if (isset($appLayout) && $appLayout): ?>

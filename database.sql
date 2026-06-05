@@ -345,6 +345,7 @@ CREATE TABLE `admin_users` (
 
 INSERT INTO `categories` (`name`, `slug`, `icon`, `description`) VALUES
 ('Développement Web',      'dev-web',       'code',             'Sites web, applications, APIs'),
+('Developpement Mobile',   'dev-mobile',    'smartphone',       'Apps iOS, Android, cross-platform'),
 ('Design & UI/UX',         'design',        'palette',          'Logos, maquettes, interfaces'),
 ('Marketing Digital',      'marketing',     'trending_up',      'SEO, réseaux sociaux, campagnes'),
 ('Rédaction & Contenu',    'redaction',     'edit_note',        'Articles, copywriting, traduction'),
