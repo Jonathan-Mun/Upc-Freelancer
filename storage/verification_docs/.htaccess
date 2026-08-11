@@ -1,0 +1,11 @@
+# ============================================================
+# UPC FREELANCE — Protection dossier verification_docs
+# Accès direct INTERDIT — fichiers sensibles (CNI, cartes)
+# ============================================================
+
+# Bloquer tout accès direct
+Order Deny,Allow
+Deny from all
+
+# Options
+Options -Indexes
