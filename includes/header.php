@@ -125,7 +125,6 @@ tailwind.config = {
 .nav-active {
     background: #eff4ff;
     color: #0061a5;
-    border-right: 3px solid #0061a5;
     font-weight: 600;
 }
 .sidebar-link {
@@ -133,7 +132,6 @@ tailwind.config = {
     align-items: center;
     gap: 0.75rem;
     padding: 0.625rem 0.75rem;
-    border-radius: 0.5rem;
     color: #43474e;
     font-size: 14px;
     transition: all 0.15s;
