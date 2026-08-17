@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Supprimer un administrateur
-// /upc_freelance/admin/admins/delete.php
 // ============================================================
 
 require_once '../includes/admin_middleware.php';
