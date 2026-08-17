@@ -3,10 +3,6 @@
 -- Encodage : UTF-8 | Moteur : InnoDB
 -- ============================================================
 
-SET FOREIGN_KEY_CHECKS = 0;
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET time_zone = "+00:00";
-
 DROP DATABASE IF EXISTS `upc_freelance`;
 CREATE DATABASE IF NOT EXISTS `upc_freelance`
     CHARACTER SET utf8mb4
@@ -16,8 +12,6 @@ USE `upc_freelance`;
 
 -- ============================================================
 -- TABLE : users
--- Contient UNIQUEMENT les données d'authentification et
--- d'identité communes aux deux rôles
 -- ============================================================
 CREATE TABLE `users` (
     `id`                     INT UNSIGNED  NOT NULL AUTO_INCREMENT,
@@ -47,8 +41,6 @@ CREATE TABLE `users` (
 
 -- ============================================================
 -- TABLE : freelancer_profiles
--- Données spécifiques aux freelancers (étudiants)
--- bio, université, compétences, tarif, liens pro, stats
 -- ============================================================
 CREATE TABLE `freelancer_profiles` (
     `id`             INT UNSIGNED  NOT NULL AUTO_INCREMENT,
@@ -79,8 +71,6 @@ CREATE TABLE `freelancer_profiles` (
 
 -- ============================================================
 -- TABLE : client_profiles
--- Données spécifiques aux clients
--- bio, entreprise, site web, stats
 -- ============================================================
 CREATE TABLE `client_profiles` (
     `id`            INT UNSIGNED  NOT NULL AUTO_INCREMENT,
@@ -210,11 +200,7 @@ CREATE TABLE `messages` (
 
 -- ============================================================
 -- UPC FREELANCE — Messages directs (hors contrat)
--- À exécuter UNE SEULE FOIS
 -- ============================================================
-
-USE `upc_freelance`;
-
 CREATE TABLE IF NOT EXISTS `direct_messages` (
     `id`          INT UNSIGNED  NOT NULL AUTO_INCREMENT,
     `sender_id`   INT UNSIGNED  NOT NULL,
@@ -370,12 +356,4 @@ INSERT INTO `categories` (`name`, `slug`, `icon`, `description`) VALUES
 ('Vidéo & Audio',          'video-audio',   'videocam',         'Montage, podcasts, animation'),
 ('Comptabilité & Finance', 'finance',       'account_balance',  'Comptabilité, conseil financier'),
 ('Informatique & Réseaux', 'informatique',  'computer',         'Systèmes, réseaux, cybersécurité');
-
--- Admin par défaut (mot de passe : Admin@2025)
--- ⚠️ Changer ce mot de passe immédiatement en production !
-INSERT INTO `admin_users` (`name`, `email`, `password_hash`, `is_super`) VALUES
-('Super Admin', 'admin@upcfreelance.com',
- '$2y$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1);
-
-SET FOREIGN_KEY_CHECKS = 1;
 
