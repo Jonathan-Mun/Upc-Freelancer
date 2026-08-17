@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Conditions d'utilisation
-// /var/www/html/upc_freelance/public/terms.php
 // ============================================================
 
 require_once '/var/www/html/upc_freelance/includes/middleware.php';

@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Comment ça marche
-// /var/www/html/upc_freelance/public/how-it-works.php
 // ============================================================
 
 require_once '../includes/middleware.php';

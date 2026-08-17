@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Page connexion (publique)
-// /var/www/html/upc_freelance/public/login.php
 // ============================================================
 
 require_once '../includes/middleware.php';

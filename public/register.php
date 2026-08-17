@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Inscription
-// /var/www/html/upc_freelance/public/register.php
 // ============================================================
 
 require_once '/var/www/html/upc_freelance/includes/middleware.php';

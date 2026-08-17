@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Mot de passe oublié
-// ../auth/forgot-password.php
 // ============================================================
 
 require_once '../includes/middleware.php';

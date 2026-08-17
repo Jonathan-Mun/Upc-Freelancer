@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Contact
-// ../public/contact.php
 // ============================================================
 
 require_once '../includes/middleware.php';

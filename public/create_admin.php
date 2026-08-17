@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Créer un administrateur
-// /upc_freelance/admin/admins/create.php
 // ============================================================
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
@@ -259,7 +258,7 @@ body { background: #0f172a; min-height: 100vh; }
         <?php if (!empty($errors)): ?>
         <div style="background:#2d0a0a;border:1px solid #7f1d1d;border-radius:10px;padding:14px 16px;margin-bottom:20px;">
             <?php foreach ($errors as $e): ?>
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;last:margin-bottom:0">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
                 <span class="material-symbols-outlined" style="color:#f87171;font-size:16px;">error</span>
                 <p style="color:#fca5a5;font-size:13px;"><?= h($e) ?></p>
             </div>

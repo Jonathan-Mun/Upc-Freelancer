@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — À propos
-// /var/www/html/upc_freelance/public/about.php
 // ============================================================
 
 require_once '../includes/middleware.php';
