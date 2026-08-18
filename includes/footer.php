@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Footer global
-// /var/www/html/upc_freelance/includes/footer.php
 // ============================================================
 $BASE = $BASE ?? '/upc_freelance';
 $appLayout = $appLayout ?? false;

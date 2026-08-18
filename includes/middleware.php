@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Middleware (sécurité globale)
-// /var/www/html/upc_freelance/includes/middleware.php
 // ============================================================
 
 // Headers de sécurité HTTP

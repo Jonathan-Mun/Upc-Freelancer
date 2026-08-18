@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Header global
-// /var/www/html/upc_freelance/includes/header.php
 // ============================================================
 
 require_once __DIR__ . '/auth.php';

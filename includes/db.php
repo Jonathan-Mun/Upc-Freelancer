@@ -1,7 +1,6 @@
 <?php
 // ============================================================
 // UPC FREELANCE — Configuration base de données
-// /var/www/html/upc_freelance/includes/db.php
 // ============================================================
 
 define('DB_HOST',    'localhost');
