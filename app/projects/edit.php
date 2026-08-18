@@ -9,6 +9,7 @@ require_once '../../includes/auth.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/db.php';
 
+requireLogin();
 requireRole('client', 'freelancer');
 
 $user      = currentUser();

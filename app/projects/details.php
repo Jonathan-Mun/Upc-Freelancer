@@ -12,6 +12,7 @@ require_once '../../includes/auth.php';
 require_once '../../includes/functions.php';
 require_once '../../includes/db.php';
 
+requireLogin();
 $pdo       = getDB();
 $projectId = (int)($_GET['id'] ?? 0);
 if (!$projectId) { redirect('../../app/projects/list.php'); }
